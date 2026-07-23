@@ -1,0 +1,28 @@
+- name: 네트워크 스위치 CPU 및 기본 정보 수집
+  hosts: switches
+  gather_facts: no  # Linux용 기본 fact 수집 기능 끄기
+
+  tasks:
+    - name: Cisco 장비 정보 및 상태 수집
+      cisco.ios.ios_facts:
+        gather_subset:
+          - default
+          - hardware
+          - interfaces
+      register: net_info
+
+    - name: 수집된 핵심 정보 화면 출력
+      ansible.builtin.debug:
+        msg:
+          - "장비 모델: {{ ansible_net_model }}"
+          - "OS 버전: {{ ansible_net_version }}"
+          - "장비 시리얼: {{ ansible_net_serialnum }}"
+          - "자유 메모리(Byte): {{ ansible_net_memfree_mb }} MB"
+          - "인터페이스 목록: {{ ansible_net_interfaces.keys() }}"
+
+    - name: 수집 결과 JSON 파일로 개별 저장
+      ansible.builtin.copy:
+        content: "{{ net_info | to_nice_json }}"
+        dest: "./facts_{{ inventory_hostname }}.json"
+      delegate_to: localhost
+
