@@ -1,0 +1,28 @@
+---
+- name: Cisco 스위치 설정 백업
+  hosts: switches
+  gather_facts: no
+
+  tasks:
+    # 1. 백업 파일을 저장할 local 디렉터리 생성 (없으면 자동 생성)
+    - name: 백업 저장 디렉터리 생성
+      file:
+        path: "/tmp/switch_backups"
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+
+    # 2. Cisco IOS 설정(running-config) 수집 및 백업 파일 저장
+    - name: Running Config 수집 및 백업 파일 생성
+      cisco.ios.ios_config:
+        backup: yes
+        backup_options:
+          filename: "{{ inventory_hostname }}_{{ ansible_date_time.date | default('today') }}.cfg"
+          dir_path: "/tmp/switch_backups"
+      register: backup_result
+
+    # 3. 백업 완료 결과 출력
+    - name: 백업 결과 출력
+      debug:
+        msg: "백업이 성공적으로 저장되었습니다: /tmp/switch_backups 디렉터리를 확인하세요."
+
