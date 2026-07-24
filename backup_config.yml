@@ -4,14 +4,12 @@
   gather_facts: no
 
   vars:
-    # 🎯 DS918+ NAS 정보 및 캡처 기반 정확한 백업 경로
     nas_ip: "10.5.11.8"
     nas_user: "admin"
-    nas_pw: "rkdgksit1@"
+    nas_pw: "rkdgksit1"
     nas_backup_path: "/volume1/cisco_BK/2026 L3 백업"
 
   tasks:
-    # 1. Semaphore 로컬 임시 저장 폴더 생성
     - name: 로컬 백업 저장 디렉터리 생성
       file:
         path: "/tmp/switch_backups"
@@ -19,7 +17,6 @@
         mode: '0755'
       delegate_to: localhost
 
-    # 2. Cisco IOS Running Config 수집 및 백업 파일 생성
     - name: Running Config 수집 및 백업 파일 생성
       cisco.ios.ios_config:
         backup: yes
@@ -28,15 +25,17 @@
           dir_path: "/tmp/switch_backups"
       register: backup_result
 
-    # 3. sshpass 및 scp를 활용해 DS918+ NAS 지정 경로로 백업 파일 전송
+    # SCP 대신 안전한 rsync/scp 커맨드 형태로 실행 및 공백 이스케이프 처리
     - name: Synology NAS 지정 경로로 파일 자동 전송
-      shell: >
-        sshpass -p '{{ nas_pw }}' scp -o StrictHostKeyChecking=no 
+      command: >
+        sshpass -p "{{ nas_pw }}" scp -P 22 
+        -o StrictHostKeyChecking=no 
+        -o UserKnownHostsFile=/dev/null 
         /tmp/switch_backups/{{ inventory_hostname }}_{{ ansible_date_time.date | default('today') }}.cfg 
-        "{{ nas_user }}@{{ nas_ip }}:'{{ nas_backup_path }}/'"
+        {{ nas_user }}@{{ nas_ip }}:"'/volume1/cisco_BK/2026 L3 백업/'"
       delegate_to: localhost
+      register: scp_result
 
-    # 4. 전송 완료 메세지 출력
     - name: 전송 완료 확인
       debug:
-        msg: "스위치 백업이 NAS({{ nas_ip }}:{{ nas_backup_path }})로 성공적으로 전송되었습니다."
+        msg: "스위치 백업이 NAS({{ nas_ip }})로 성공적으로 전송되었습니다."
