@@ -28,10 +28,12 @@
 
     - name: Synology NAS 지정 경로로 파일 자동 전송
       delegate_to: localhost
-      shell: |
-        sshpass -e scp -P 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        "/tmp/switch_backups/{{ inventory_hostname }}_{{ ansible_date_time.date | default('today') }}.cfg" \
-        "{{ nas_user }}@{{ nas_ip }}:'{{ nas_backup_path }}/'"
+      shell: >
+        sshpass -e scp -P 22 
+        -o StrictHostKeyChecking=no 
+        -o UserKnownHostsFile=/dev/null 
+        "/tmp/switch_backups/{{ inventory_hostname }}_{{ ansible_date_time.date | default('today') }}.cfg" 
+        {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}/
       environment:
         SSHPASS: "{{ nas_pw }}"
       register: scp_result
