@@ -33,7 +33,7 @@
         -o StrictHostKeyChecking=no 
         -o UserKnownHostsFile=/dev/null 
         "/tmp/switch_backups/{{ inventory_hostname }}_{{ ansible_date_time.date | default('today') }}.cfg" 
-        {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}/
+        {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}
       environment:
         SSHPASS: "{{ nas_pw }}"
       register: scp_result
