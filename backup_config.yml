@@ -7,7 +7,7 @@
     ansible_python_interpreter: /usr/bin/python3
     nas_ip: "10.5.11.8"
     nas_user: "admin"
-    nas_pw: "rkdgksit1"
+    nas_pw: "rkdgksit1@"
     nas_backup_path: "/volume1/cisco_BK/2026_L3_Backup"
 
   tasks:
