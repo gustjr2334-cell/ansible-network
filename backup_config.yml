@@ -4,6 +4,7 @@
   gather_facts: no
 
   vars:
+    ansible_python_interpreter: /usr/bin/python3
     nas_ip: "10.5.11.8"
     nas_user: "admin"
     nas_pw: "rkdgksit1"
