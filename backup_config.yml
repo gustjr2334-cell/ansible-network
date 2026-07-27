@@ -8,7 +8,7 @@
     nas_ip: "10.5.11.8"
     nas_user: "admin"
     nas_pw: "rkdgksit1@"
-    nas_backup_path: "/volume1/cisco_BK/2026_L3_Backup"
+    nas_backup_path: "/volume1/cisco_BK/2026 L3 백업"
 
   tasks:
     - name: 로컬 백업 저장 디렉터리 생성
@@ -26,17 +26,12 @@
           dir_path: "/tmp/switch_backups"
       register: backup_result
 
-    # SCP 대신 안전한 rsync/scp 커맨드 형태로 실행 및 공백 이스케이프 처리
     - name: Synology NAS 지정 경로로 파일 자동 전송
-      command: >
-        sshpass -p "{{ nas_pw }}" scp -P 22 
-        -o StrictHostKeyChecking=no 
-        -o UserKnownHostsFile=/dev/null 
-        /tmp/switch_backups/{{ inventory_hostname }}_{{ ansible_date_time.date | default('today') }}.cfg 
-        {{ nas_user }}@{{ nas_ip }}:"'/volume1/cisco_BK/2026 L3 백업/'"
       delegate_to: localhost
+      shell: |
+        sshpass -e scp -P 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "/tmp/switch_backups/{{ inventory_hostname }}_{{ ansible_date_time.date | default('today') }}.cfg" \
+        "{{ nas_user }}@{{ nas_ip }}:'{{ nas_backup_path }}/'"
+      environment:
+        SSHPASS: "{{ nas_pw }}"
       register: scp_result
-
-    - name: 전송 완료 확인
-      debug:
-        msg: "스위치 백업이 NAS({{ nas_ip }})로 성공적으로 전송되었습니다."
