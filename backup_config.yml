@@ -1,7 +1,8 @@
 ---
+---
 - name: Cisco 스위치 설정 백업 및 Synology NAS 자동 전송
   hosts: switches
-  gather_facts: no
+  gather_facts: yes  # 시간 변수 수집을 위해 yes로 변경
 
   vars:
     ansible_python_interpreter: /usr/bin/python3
@@ -9,6 +10,8 @@
     nas_user: "admin"
     nas_pw: "rkdgksit1@"
     nas_backup_path: "/volume1/cisco_BK/2026_L3_Backup"
+    # 타임스탬프 변수 정의 (년월일_시분초)
+    backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
 
   tasks:
     - name: 로컬 백업 저장 디렉터리 생성
@@ -22,7 +25,7 @@
       cisco.ios.ios_config:
         backup: yes
         backup_options:
-          filename: "{{ inventory_hostname }}_{{ ansible_date_time.date | default('today') }}.cfg"
+          filename: "{{ inventory_hostname }}_{{ backup_timestamp }}.cfg"
           dir_path: "/tmp/switch_backups"
       register: backup_result
 
@@ -32,8 +35,12 @@
         sshpass -e scp -O -P 22 
         -o StrictHostKeyChecking=no 
         -o UserKnownHostsFile=/dev/null 
-        "/tmp/switch_backups/{{ inventory_hostname }}_{{ ansible_date_time.date | default('today') }}.cfg" 
-        {{ nas_user }}@{{ nas_ip }}:/volume1/cisco_BK/2026_L3_Backup/
+        "/tmp/switch_backups/{{ inventory_hostname }}_{{ backup_timestamp }}.cfg" 
+        {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}/
       environment:
         SSHPASS: "{{ nas_pw }}"
       register: scp_result
+
+    - name: 전송 완료 확인
+      debug:
+        msg: "스위치({{ inventory_hostname }}) 백업이 NAS({{ nas_ip }})로 성공적으로 전송되었습니다. (파일명: {{ inventory_hostname }}_{{ backup_timestamp }}.cfg)"
