@@ -11,15 +11,20 @@
     ansible_connection: ansible.netcommon.network_cli
     ansible_network_os: cisco.ios.ios
 
-    # Paramiko 드라이버 강제 구형 알고리즘 허용 옵션
-    ansible_paramiko_look_for_keys: no
-    ansible_command_timeout: 30
+    # 1. Native CLI 전송 방식 강제 지정 (Paramiko 무시 우회)
+    ansible_netcommon_transport: cli
 
-    # 구형 시스코 스위치 SSH 암호화(KEX/HostKey/Ciphers) 허용 옵션 추가 (핵심!)
+    # 2. OpenSSH CLI 레벨 구형 KEX/알고리즘 강제 허용
     ansible_ssh_common_args: >-
       -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1
       -o HostKeyAlgorithms=+ssh-rsa,ssh-dss
       -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
+      -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null
+
+    # 3. Paramiko 백엔드 구형 키 허용 플래그
+    ansible_paramiko_look_for_keys: no
+    ansible_paramiko_host_key_auto_add: yes
 
     ansible_python_interpreter: /usr/bin/python3
     nas_ip: "10.5.11.8"
