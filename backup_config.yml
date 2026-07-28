@@ -11,6 +11,12 @@
     ansible_connection: ansible.netcommon.network_cli
     ansible_network_os: cisco.ios.ios
 
+    # 구형 시스코 스위치 SSH 암호화(KEX/HostKey/Ciphers) 허용 옵션 추가 (핵심!)
+    ansible_ssh_common_args: >-
+      -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1
+      -o HostKeyAlgorithms=+ssh-rsa,ssh-dss
+      -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
+
     ansible_python_interpreter: /usr/bin/python3
     nas_ip: "10.5.11.8"
     nas_user: "admin"
