@@ -4,6 +4,7 @@
   gather_facts: no
 
   vars:
+    # NAS 접속 및 백업 저장 경로
     ansible_python_interpreter: /usr/bin/python3
     nas_ip: "10.5.11.8"
     nas_user: "admin"
@@ -24,7 +25,6 @@
         mode: '0755'
       delegate_to: localhost
 
-    # OpenSSL 3.0 SECLEVEL=0 강제 활성화 설정 파일 생성
     - name: Legacy OpenSSL Config 임시 생성
       ansible.builtin.copy:
         dest: "/tmp/openssl_legacy.cnf"
@@ -46,18 +46,49 @@
       delegate_to: localhost
       run_once: true
 
+    # SSH 세션 내부에서 terminal length 0 및 show running-config 실행
     - name: Cisco 스위치 Running Config 수집
       ansible.builtin.shell: |
-        OPENSSL_CONF=/tmp/openssl_legacy.cnf OPENSSL_ENABLE_SHA1_SIGNATURES=1 \
-        sshpass -p '{{ hostvars[inventory_hostname].ansible_password | default(hostvars[inventory_hostname].ansible_ssh_pass | default('')) }}' ssh -p 22 \
-          -o StrictHostKeyChecking=no \
-          -o UserKnownHostsFile=/dev/null \
-          -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1 \
-          -o HostKeyAlgorithms=+ssh-rsa,ssh-dss \
-          -o PubkeyAcceptedKeyTypes=+ssh-rsa,ssh-dss \
-          -o PubkeyAcceptedAlgorithms=+ssh-rsa,ssh-dss \
-          -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc \
-          {{ hostvars[inventory_hostname].ansible_user | default(hostvars[inventory_hostname].ansible_ssh_user | default('admin')) }}@{{ ansible_host | default(inventory_hostname) }} "show running-config"
+        OPENSSL_CONF=/tmp/openssl_legacy.cnf OPENSSL_ENABLE_SHA1_SIGNATURES=1 python3 -c '
+        import pexpect, sys
+
+        ssh_cmd = (
+            "ssh -p 22 -tt "
+            "-o StrictHostKeyChecking=no "
+            "-o UserKnownHostsFile=/dev/null "
+            "-o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1 "
+            "-o HostKeyAlgorithms=+ssh-rsa,ssh-dss "
+            "-o PubkeyAcceptedKeyTypes=+ssh-rsa,ssh-dss "
+            "-o PubkeyAcceptedAlgorithms=+ssh-rsa,ssh-dss "
+            "-o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc "
+            "{{ hostvars[inventory_hostname].ansible_user | default(hostvars[inventory_hostname].ansible_ssh_user | default("admin")) }}@{{ ansible_host | default(inventory_hostname) }}"
+        )
+
+        child = pexpect.spawn(ssh_cmd, encoding="utf-8", timeout=40)
+        
+        # 1. SSH 비밀번호 입력
+        idx = child.expect(["[Pp]assword:", pexpect.EOF, pexpect.TIMEOUT])
+        if idx == 0:
+            child.sendline("{{ hostvars[inventory_hostname].ansible_password | default(hostvars[inventory_hostname].ansible_ssh_pass | default("")) }}")
+        
+        # 2. 프롬프트 확인 및 enable 처리
+        idx = child.expect([">", "#", pexpect.TIMEOUT])
+        if idx == 0:
+            child.sendline("enable")
+            child.expect("[Pp]assword:")
+            child.sendline("{{ hostvars[inventory_hostname].ansible_enable_pass | default(hostvars[inventory_hostname].ansible_password | default("")) }}")
+            child.expect("#")
+        
+        # 3. 화면 끊김 방지(paging) 및 config 출력 명령
+        child.sendline("terminal length 0")
+        child.expect("#")
+        child.sendline("show running-config")
+        child.expect("#")
+        
+        # 4. 수집 결과만 출력
+        print(child.before)
+        child.sendline("exit")
+        '
       delegate_to: localhost
       register: switch_config
       changed_when: false
