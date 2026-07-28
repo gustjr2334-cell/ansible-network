@@ -11,6 +11,10 @@
     ansible_connection: ansible.netcommon.network_cli
     ansible_network_os: cisco.ios.ios
 
+    # Paramiko 드라이버 강제 구형 알고리즘 허용 옵션
+    ansible_paramiko_look_for_keys: no
+    ansible_command_timeout: 30
+
     # 구형 시스코 스위치 SSH 암호화(KEX/HostKey/Ciphers) 허용 옵션 추가 (핵심!)
     ansible_ssh_common_args: >-
       -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1
