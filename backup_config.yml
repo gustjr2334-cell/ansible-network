@@ -24,16 +24,16 @@
         mode: '0755'
       delegate_to: localhost
 
-    # Paramiko 우회: Native OpenSSH 커맨드로 직접 running-config 수집
+    # Native OpenSSH 커맨드 사용 (AWX 자격 증명 변수 매핑 최적화)
     - name: Cisco 스위치 Running Config 수집
       ansible.builtin.shell: |
-        sshpass -p '{{ ansible_password | default(ansible_ssh_pass) }}' ssh -p 22 \
+        sshpass -p '{{ ansible_password | default(ansible_ssh_pass | default("")) }}' ssh -p 22 \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
           -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1 \
           -o HostKeyAlgorithms=+ssh-rsa,ssh-dss \
           -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc \
-          {{ ansible_user | default(ansible_ssh_user) }}@{{ inventory_hostname }} "show running-config"
+          {{ ansible_user | default(ansible_ssh_user | default("admin")) }}@{{ inventory_hostname }} "show running-config"
       delegate_to: localhost
       register: switch_config
       changed_when: false
