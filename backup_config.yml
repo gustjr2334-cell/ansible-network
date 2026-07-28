@@ -4,9 +4,9 @@
   gather_facts: no
 
   vars:
-    # 1. 시스코 스위치 SSH 접속 정보 (여기 계정과 비밀번호를 설정해 주세요)
+    # 1. 시스코 스위치 SSH 접속 정보 (실제 계정/비밀번호)
     switch_user: "admin"
-    switch_pw: "cisco1234!"  # <-- 실제 스위치 SSH 비밀번호로 변경하세요!
+    switch_pw: "cisco1234!"
 
     # 2. NAS 접속 및 백업 정보
     ansible_python_interpreter: /usr/bin/python3
@@ -29,7 +29,7 @@
         mode: '0755'
       delegate_to: localhost
 
-    # Native OpenSSH 커맨드 사용 (명시된 switch_user / switch_pw 변수 사용)
+    # IP 주소({{ ansible_host }})로 직접 SSH 접속하도록 수정
     - name: Cisco 스위치 Running Config 수집
       ansible.builtin.shell: |
         sshpass -p '{{ switch_pw }}' ssh -p 22 \
@@ -38,7 +38,7 @@
           -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1 \
           -o HostKeyAlgorithms=+ssh-rsa,ssh-dss \
           -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc \
-          {{ switch_user }}@{{ inventory_hostname }} "show running-config"
+          {{ switch_user }}@{{ ansible_host | default(inventory_hostname) }} "show running-config"
       delegate_to: localhost
       register: switch_config
       changed_when: false
