@@ -4,7 +4,7 @@
   gather_facts: no
 
   vars:
-    # NAS 접속 및 백업 경로 정보만 플레이북에서 관리
+    # NAS 접속 및 백업 경로 정보
     ansible_python_interpreter: /usr/bin/python3
     nas_ip: "10.5.11.8"
     nas_user: "admin"
@@ -25,10 +25,10 @@
         mode: '0755'
       delegate_to: localhost
 
-    # AWX 인벤토리에 설정된 ansible_password / ansible_user 변수 사용
+    # OPENSSL_CONF=/dev/null 및 LEGACY 크립토 정책 환경변수 주입
     - name: Cisco 스위치 Running Config 수집
       ansible.builtin.shell: |
-        sshpass -p '{{ ansible_password | default(ansible_ssh_pass) }}' ssh -p 22 \
+        OPENSSL_CONF=/dev/null sshpass -p '{{ hostvars[inventory_hostname].ansible_password | default(hostvars[inventory_hostname].ansible_ssh_pass | default('')) }}' ssh -p 22 \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
           -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1 \
@@ -36,7 +36,10 @@
           -o PubkeyAcceptedKeyTypes=+ssh-rsa,ssh-dss \
           -o PubkeyAcceptedAlgorithms=+ssh-rsa,ssh-dss \
           -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc \
-          {{ ansible_user | default(ansible_ssh_user | default('admin')) }}@{{ ansible_host | default(inventory_hostname) }} "show running-config"
+          {{ hostvars[inventory_hostname].ansible_user | default(hostvars[inventory_hostname].ansible_ssh_user | default('admin')) }}@{{ ansible_host | default(inventory_hostname) }} "show running-config"
+      environment:
+        OPENSSL_CONF: /dev/null
+        OPENSSL_SYSTEM_CIPHERS_OVERRIDE: "1"
       delegate_to: localhost
       register: switch_config
       changed_when: false
