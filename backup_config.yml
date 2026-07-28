@@ -4,7 +4,6 @@
   gather_facts: no
 
   vars:
-    # NAS 접속 및 백업 경로 정보
     ansible_python_interpreter: /usr/bin/python3
     nas_ip: "10.5.11.8"
     nas_user: "admin"
@@ -25,10 +24,32 @@
         mode: '0755'
       delegate_to: localhost
 
-    # OPENSSL_CONF=/dev/null 및 LEGACY 크립토 정책 환경변수 주입
+    # OpenSSL 3.0 SECLEVEL=0 강제 활성화 설정 파일 생성
+    - name: Legacy OpenSSL Config 임시 생성
+      ansible.builtin.copy:
+        dest: "/tmp/openssl_legacy.cnf"
+        content: |
+          openssl_conf = openssl_init
+
+          [openssl_init]
+          providers = provider_sect
+
+          [provider_sect]
+          default = default_sect
+          legacy = legacy_sect
+
+          [default_sect]
+          activate = 1
+
+          [legacy_sect]
+          activate = 1
+      delegate_to: localhost
+      run_once: true
+
     - name: Cisco 스위치 Running Config 수집
       ansible.builtin.shell: |
-        OPENSSL_CONF=/dev/null sshpass -p '{{ hostvars[inventory_hostname].ansible_password | default(hostvars[inventory_hostname].ansible_ssh_pass | default('')) }}' ssh -p 22 \
+        OPENSSL_CONF=/tmp/openssl_legacy.cnf OPENSSL_ENABLE_SHA1_SIGNATURES=1 \
+        sshpass -p '{{ hostvars[inventory_hostname].ansible_password | default(hostvars[inventory_hostname].ansible_ssh_pass | default('')) }}' ssh -p 22 \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
           -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1 \
@@ -37,9 +58,6 @@
           -o PubkeyAcceptedAlgorithms=+ssh-rsa,ssh-dss \
           -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc \
           {{ hostvars[inventory_hostname].ansible_user | default(hostvars[inventory_hostname].ansible_ssh_user | default('admin')) }}@{{ ansible_host | default(inventory_hostname) }} "show running-config"
-      environment:
-        OPENSSL_CONF: /dev/null
-        OPENSSL_SYSTEM_CIPHERS_OVERRIDE: "1"
       delegate_to: localhost
       register: switch_config
       changed_when: false
