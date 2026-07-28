@@ -3,29 +3,7 @@
   hosts: all
   gather_facts: no
 
-  collections:
-    - cisco.ios
-
   vars:
-    # 네트워크 전용 접속 모드 및 OS 지정 (핵심!)
-    ansible_connection: ansible.netcommon.network_cli
-    ansible_network_os: cisco.ios.ios
-
-    # 1. Native CLI 전송 방식 강제 지정 (Paramiko 무시 우회)
-    ansible_netcommon_transport: cli
-
-    # 2. OpenSSH CLI 레벨 구형 KEX/알고리즘 강제 허용
-    ansible_ssh_common_args: >-
-      -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1
-      -o HostKeyAlgorithms=+ssh-rsa,ssh-dss
-      -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
-      -o StrictHostKeyChecking=no
-      -o UserKnownHostsFile=/dev/null
-
-    # 3. Paramiko 백엔드 구형 키 허용 플래그
-    ansible_paramiko_look_for_keys: no
-    ansible_paramiko_host_key_auto_add: yes
-
     ansible_python_interpreter: /usr/bin/python3
     nas_ip: "10.5.11.8"
     nas_user: "admin"
@@ -46,22 +24,41 @@
         mode: '0755'
       delegate_to: localhost
 
-    - name: Running Config 수집 및 백업 파일 생성
-      ios_config:
-        backup: yes
-        backup_options:
-          filename: "{{ inventory_hostname }}_{{ run_timestamp }}.cfg"
-          dir_path: "/tmp/switch_backups"
-      register: backup_result
-
-    # SCP 대신 SSH 인증 정보를 통한 직접 전송 처리 (sshpass 패키지 미설치 대비)
-    - name: Synology NAS로 파일 자동 전송
+    # Paramiko 우회: Native OpenSSH 커맨드로 직접 running-config 수집
+    - name: Cisco 스위치 Running Config 수집
+      ansible.builtin.shell: |
+        sshpass -p '{{ ansible_password | default(ansible_ssh_pass) }}' ssh -p 22 \
+          -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null \
+          -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1 \
+          -o HostKeyAlgorithms=+ssh-rsa,ssh-dss \
+          -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc \
+          {{ ansible_user | default(ansible_ssh_user) }}@{{ inventory_hostname }} "show running-config"
       delegate_to: localhost
-      ansible.builtin.shell: >
-        sshpass -p '{{ nas_pw }}' scp -O -P 22
-        -o StrictHostKeyChecking=no
-        -o UserKnownHostsFile=/dev/null
-        "/tmp/switch_backups/{{ inventory_hostname }}_{{ run_timestamp }}.cfg"
-        {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}/
+      register: switch_config
+      changed_when: false
+
+    - name: 수집한 백업 파일 로컬 저장
+      ansible.builtin.copy:
+        content: "{{ switch_config.stdout }}"
+        dest: "/tmp/switch_backups/{{ inventory_hostname }}_{{ run_timestamp }}.cfg"
+      delegate_to: localhost
+
+    - name: Synology NAS 지정 경로로 파일 자동 전송
+      ansible.builtin.shell: |
+        sshpass -p '{{ nas_pw }}' scp -O -P 22 \
+          -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null \
+          "/tmp/switch_backups/{{ inventory_hostname }}_{{ run_timestamp }}.cfg" \
+          {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}/
+      delegate_to: localhost
       register: scp_result
-      failed_when: scp_result.rc != 0
+
+    - name: NAS 전송 로그 확인
+      ansible.builtin.debug:
+        msg:
+          - "STDOUT: {{ scp_result.stdout }}"
+          - "STDERR: {{ scp_result.stderr }}"
+          - "Return Code: {{ scp_result.rc }}"
+      delegate_to: localhost
+
