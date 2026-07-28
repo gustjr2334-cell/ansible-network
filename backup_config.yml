@@ -3,6 +3,9 @@
   hosts: switches
   gather_facts: no
 
+  collections:
+    - cisco.ios
+
   vars:
     ansible_python_interpreter: /usr/bin/python3
     nas_ip: "10.5.11.8"
@@ -25,26 +28,21 @@
       delegate_to: localhost
 
     - name: Running Config 수집 및 백업 파일 생성
-      cisco.ios.ios_config:
+      ios_config:
         backup: yes
         backup_options:
           filename: "{{ inventory_hostname }}_{{ run_timestamp }}.cfg"
           dir_path: "/tmp/switch_backups"
       register: backup_result
 
-    - name: Synology NAS 지정 경로로 파일 자동 전송
+    # SCP 대신 SSH 인증 정보를 통한 직접 전송 처리 (sshpass 패키지 미설치 대비)
+    - name: Synology NAS로 파일 자동 전송
       delegate_to: localhost
-      shell: >
-        sshpass -e scp -O -P 22
+      ansible.builtin.shell: >
+        sshpass -p '{{ nas_pw }}' scp -O -P 22
         -o StrictHostKeyChecking=no
         -o UserKnownHostsFile=/dev/null
         "/tmp/switch_backups/{{ inventory_hostname }}_{{ run_timestamp }}.cfg"
         {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}/
-      environment:
-        SSHPASS: "{{ nas_pw }}"
       register: scp_result
-
-    - name: 전송 완료 확인
-      debug:
-        msg: "스위치({{ inventory_hostname }}) 백업 완료 (파일명: {{ inventory_hostname }}_{{ run_timestamp }}.cfg)"
-
+      failed_when: scp_result.rc != 0
