@@ -1,0 +1,10 @@
+[switches]
+switch-01 ansible_host=10.5.30.252
+
+[switches:vars]
+ansible_network_os=cisco.ios.ios
+ansible_connection=network_cli
+ansible_user=ecopro
+ansible_password=rkdgksit1
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+

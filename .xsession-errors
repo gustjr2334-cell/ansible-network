@@ -1,0 +1,32 @@
+Xsession: X session started for jhs1 at 2026. 07. 15. (수) 09:40:55 KST
+dbus-update-activation-environment: setting DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+dbus-update-activation-environment: setting DISPLAY=:10.0
+localuser:jhs1 being added to access control list
+dbus-update-activation-environment: setting GTK_MODULES=gail:atk-bridge
+dbus-update-activation-environment: setting QT_ACCESSIBILITY=1
+
+** (process:7288): ERROR **: 09:40:56.183: A graphical session is already running!
+Xsession: X session started for jhs1 at 2026. 07. 15. (수) 09:42:13 KST
+dbus-update-activation-environment: setting DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+dbus-update-activation-environment: setting DISPLAY=:10.0
+localuser:jhs1 being added to access control list
+dbus-update-activation-environment: setting GTK_MODULES=gail:atk-bridge
+dbus-update-activation-environment: setting QT_ACCESSIBILITY=1
+
+** (process:7826): ERROR **: 09:42:13.458: A graphical session is already running!
+Xsession: X session started for jhs1 at 2026. 07. 15. (수) 09:42:36 KST
+dbus-update-activation-environment: setting DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+dbus-update-activation-environment: setting DISPLAY=:10.0
+localuser:jhs1 being added to access control list
+dbus-update-activation-environment: setting GTK_MODULES=gail:atk-bridge
+dbus-update-activation-environment: setting QT_ACCESSIBILITY=1
+
+** (process:8280): ERROR **: 09:42:36.995: A graphical session is already running!
+Xsession: X session started for jhs1 at 2026. 07. 15. (수) 13:17:47 KST
+dbus-update-activation-environment: setting DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+dbus-update-activation-environment: setting DISPLAY=:10.0
+localuser:jhs1 being added to access control list
+dbus-update-activation-environment: setting GTK_MODULES=gail:atk-bridge
+dbus-update-activation-environment: setting QT_ACCESSIBILITY=1
+
+** (process:8835): ERROR **: 13:17:47.512: A graphical session is already running!

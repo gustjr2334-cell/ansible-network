@@ -1,0 +1,23 @@
+[2026-07-15T13:17:47.311+0900] [INFO ] Socket 14: connection accepted from AF_UNIX
+[2026-07-15T13:17:47.353+0900] [INFO ] sound_process_output_format:
+[2026-07-15T13:17:47.355+0900] [INFO ]       wFormatNo       0
+[2026-07-15T13:17:47.356+0900] [INFO ]       wFormatTag      WAVE_FORMAT_PCM
+[2026-07-15T13:17:47.363+0900] [INFO ]       nChannels       2
+[2026-07-15T13:17:47.366+0900] [INFO ]       nSamplesPerSec  44100
+[2026-07-15T13:17:47.368+0900] [INFO ]       nAvgBytesPerSec 176400
+[2026-07-15T13:17:47.369+0900] [INFO ]       nBlockAlign     4
+[2026-07-15T13:17:47.370+0900] [INFO ]       wBitsPerSample  16
+[2026-07-15T13:17:47.372+0900] [INFO ]       cbSize          0
+[2026-07-15T13:17:47.374+0900] [INFO ] sound_process_output_format:
+[2026-07-15T13:17:47.375+0900] [INFO ]       wFormatNo       1
+[2026-07-15T13:17:47.376+0900] [INFO ]       wFormatTag      WAVE_FORMAT_PCM
+[2026-07-15T13:17:47.378+0900] [INFO ]       nChannels       2
+[2026-07-15T13:17:47.379+0900] [INFO ]       nSamplesPerSec  22050
+[2026-07-15T13:17:47.381+0900] [INFO ]       nAvgBytesPerSec 88200
+[2026-07-15T13:17:47.382+0900] [INFO ]       nBlockAlign     4
+[2026-07-15T13:17:47.383+0900] [INFO ]       wBitsPerSample  16
+[2026-07-15T13:17:47.384+0900] [INFO ]       cbSize          0
+[2026-07-15T13:17:47.386+0900] [INFO ] sound_process_training: round trip time 0
+[2026-07-15T13:17:47.429+0900] [INFO ] Detected remote smartcard 'SCARD'
+[2026-07-15T13:17:47.444+0900] [INFO ] Detected remote printer 'PRN3' (not supported)
+[2026-07-15T13:17:47.446+0900] [INFO ] Detected remote printer 'PRN2' (not supported)

@@ -1,0 +1,1191 @@
+{
+    "ansible_facts": {
+        "ansible_net_all_ipv4_addresses": [
+            "10.5.11.252",
+            "10.5.21.252",
+            "10.5.20.252",
+            "10.5.60.252",
+            "10.5.99.252",
+            "10.5.30.252",
+            "10.5.50.252"
+        ],
+        "ansible_net_all_ipv6_addresses": [],
+        "ansible_net_api": "cliconf",
+        "ansible_net_cpu_utilization": {
+            "core": {
+                "five_minutes": 14,
+                "five_seconds": 17,
+                "five_seconds_interrupt": 3,
+                "one_minute": 15
+            }
+        },
+        "ansible_net_filesystems": [],
+        "ansible_net_filesystems_info": {},
+        "ansible_net_gather_network_resources": [],
+        "ansible_net_gather_subset": [
+            "interfaces",
+            "default",
+            "hardware"
+        ],
+        "ansible_net_hostname": "P1BM-ADM01-IDCC2F-OUBB-1",
+        "ansible_net_image": "flash:packages.conf",
+        "ansible_net_interfaces": {
+            "FortyGigabitEthernet1/1/1": {
+                "bandwidth": 40000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ec1",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Forty Gigabit Ethernet"
+            },
+            "FortyGigabitEthernet1/1/2": {
+                "bandwidth": 40000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ec2",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Forty Gigabit Ethernet"
+            },
+            "FortyGigabitEthernet1/1/3": {
+                "bandwidth": 40000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ec3",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Forty Gigabit Ethernet"
+            },
+            "FortyGigabitEthernet1/1/4": {
+                "bandwidth": 40000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ec4",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Forty Gigabit Ethernet"
+            },
+            "GigabitEthernet0/0": {
+                "bandwidth": 1000000,
+                "description": null,
+                "duplex": "Full",
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0e80",
+                "mediatype": "RJ45",
+                "mtu": 1500,
+                "operstatus": "administratively down",
+                "type": "RP management port"
+            },
+            "TenGigabitEthernet1/0/1": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0e81",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/10": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC05-UTLT1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e8a",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/11": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC05-EPSB1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e8b",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/12": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC05-LOGI1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e8c",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/13": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC05-EPSB2F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e8d",
+                "mediatype": "1000BaseZX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/14": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC05-EPSA6F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e8e",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/15": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-IDCC2F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e8f",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/16": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-IDCC2F-OUWC-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e90",
+                "mediatype": "1000BaseZX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/17": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-IDCC2F-OUWC-2 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e91",
+                "mediatype": "1000BaseZX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/18": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-EPSA1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e92",
+                "mediatype": "1000BaseZX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/19": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-EPSB1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e93",
+                "mediatype": "1000BaseZX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/2": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0e82",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/20": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-OFFR1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e94",
+                "mediatype": "1000BaseZX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/21": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-LOGI1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e95",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/22": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-EPSA2F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e96",
+                "mediatype": "1000BaseZX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/23": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-EPSB6F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e97",
+                "mediatype": "1000BaseZX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/24": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC05-QMOF1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e98",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/25": {
+                "bandwidth": 10000000,
+                "description": "## P1BM-FAC05-QMOF1F-OUL2-2 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0e99",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/26": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0e9a",
+                "mediatype": "1000BaseZX SFP",
+                "mtu": 1500,
+                "operstatus": "administratively down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/27": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-EPSA2F-OUL2-2 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e9b",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/28": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-IDCC2F-OUL2-3(Physic_Security) ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e9c",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/29": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0e9d",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/3": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-IDCC2F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e83",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/30": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0e9e",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/31": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-EPSB4F-OUL2-1 [gi1/0/25] ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e9f",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/32": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ea0",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/33": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-EPSB5F-OUL2-1 [ gi1/0/25] ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0ea1",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/34": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-EPSA1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0ea2",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/35": {
+                "bandwidth": 1000000,
+                "description": "## video meeting_Polycom_L2 SW ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0ea3",
+                "mediatype": "1000BaseSX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/36": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ea4",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/37": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ea5",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/38": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ea6",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/39": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC5N-PLCR2F-AIL2-1",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ea7",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/4": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-SMTA3F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e84",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/40": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ea8",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/41": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ea9",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/42": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eaa",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/43": {
+                "bandwidth": 1000000,
+                "description": "##P1BM-ADM01-IDCC2F-AIFW-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0eab",
+                "mediatype": "1000BaseSX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/44": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eac",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/45": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ead",
+                "mediatype": "unknown",
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/46": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-IDCC2F-EZIS-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0eae",
+                "mediatype": "10/100/1000BaseTX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/47": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-IDCC2F-OUNS-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0eaf",
+                "mediatype": "10/100/1000BaseTX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/48": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-IDCC2F-OUBB-2 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0eb0",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/5": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-ADM01-EPSA3F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e85",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/6": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-C5GDH-GDHR1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e86",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/7": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-CAM5W-PLCR2F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e87",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/8": {
+                "bandwidth": 1000000,
+                "description": "## P1IN-RND01-OFFR2F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e88",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/0/9": {
+                "bandwidth": 1000000,
+                "description": "## P1BM-FAC05-EPSA1F-OUL2-1 ##",
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0e89",
+                "mediatype": "1000BaseLX SFP",
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/1": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eb1",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/10": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eba",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/11": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ebb",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/12": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ebc",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/13": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ebd",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/14": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ebe",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/15": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ebf",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/16": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ec0",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/2": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eb2",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/3": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eb3",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/4": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eb4",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/5": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eb5",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/6": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eb6",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/7": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eb7",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/8": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eb8",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "TenGigabitEthernet1/1/9": {
+                "bandwidth": 10000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0eb9",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "down",
+                "type": "Ten Gigabit Ethernet"
+            },
+            "Vlan1": {
+                "bandwidth": 1000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [],
+                "lineprotocol": "down",
+                "macaddress": "d4ad.bde1.0ec7",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "administratively down",
+                "type": "Ethernet SVI"
+            },
+            "Vlan30": {
+                "bandwidth": 1000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [
+                    {
+                        "address": "10.5.11.252",
+                        "subnet": "24"
+                    },
+                    {
+                        "address": "10.5.21.252",
+                        "subnet": "24"
+                    },
+                    {
+                        "address": "10.5.20.252",
+                        "subnet": "24"
+                    },
+                    {
+                        "address": "10.5.60.252",
+                        "subnet": "24"
+                    },
+                    {
+                        "address": "10.5.99.252",
+                        "subnet": "24"
+                    },
+                    {
+                        "address": "10.5.30.252",
+                        "subnet": "24"
+                    }
+                ],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0ee5",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ethernet SVI"
+            },
+            "Vlan50": {
+                "bandwidth": 1000000,
+                "description": null,
+                "duplex": null,
+                "ipv4": [
+                    {
+                        "address": "10.5.50.252",
+                        "subnet": "24"
+                    }
+                ],
+                "lineprotocol": "up",
+                "macaddress": "d4ad.bde1.0ee8",
+                "mediatype": null,
+                "mtu": 1500,
+                "operstatus": "up",
+                "type": "Ethernet SVI"
+            }
+        },
+        "ansible_net_iostype": "IOS-XE",
+        "ansible_net_memfree_mb": 549.6275749206543,
+        "ansible_net_memtotal_mb": 832.9705200195312,
+        "ansible_net_model": "WS-C3850-48XS",
+        "ansible_net_neighbors": {
+            "TenGigabitEthernet1/0/10": [
+                {
+                    "host": "CN86K3L989",
+                    "ip": "10.5.30.29",
+                    "platform": "hpe1920S_24G",
+                    "port": "26"
+                }
+            ],
+            "TenGigabitEthernet1/0/11": [
+                {
+                    "host": "CN86K3L987",
+                    "ip": "10.5.30.30",
+                    "platform": "hpe1920S_24G",
+                    "port": "26"
+                }
+            ],
+            "TenGigabitEthernet1/0/12": [
+                {
+                    "host": "CN86K3L9WK",
+                    "ip": "10.5.30.31",
+                    "platform": "hpe1920S_24G",
+                    "port": "26"
+                }
+            ],
+            "TenGigabitEthernet1/0/13": [
+                {
+                    "host": "CN86K3L929",
+                    "ip": "10.5.30.32",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/14": [
+                {
+                    "host": "CN86K3L9WV",
+                    "ip": "10.5.30.33",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/15": [
+                {
+                    "host": "CN86K3L1PP",
+                    "ip": "10.5.30.34",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/18": [
+                {
+                    "chassis_id": "64e8.8128.c198",
+                    "host": "P1BM-FAC5N-EPSA1F-OUL2-1",
+                    "ip": "10.5.30.100",
+                    "port": "27"
+                }
+            ],
+            "TenGigabitEthernet1/0/19": [
+                {
+                    "chassis_id": "64e8.8128.03c2",
+                    "host": "P1BM-FAC5N-EPSB1F-OUL2-1",
+                    "ip": "10.5.30.101",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/20": [
+                {
+                    "chassis_id": "64e8.8128.62e7",
+                    "host": "P1BM-FAC5N-OFFR1F-OUL2-1",
+                    "ip": "10.5.30.102",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/21": [
+                {
+                    "chassis_id": "64e8.81ad.13f5",
+                    "host": "P1BM-FAC5N-OFFR1F-OUL2-2",
+                    "ip": "10.5.30.103",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/22": [
+                {
+                    "host": "SwitchB45D2F",
+                    "ip": "10.5.30.104",
+                    "platform": "Cisco CBS220-24T-4G (PID:CBS220-24T-4G)",
+                    "port": "gi25"
+                }
+            ],
+            "TenGigabitEthernet1/0/23": [
+                {
+                    "chassis_id": "64e8.81ad.83a4",
+                    "host": "P1BM-FAC5N-EPSB6F-OUL2-1",
+                    "ip": "10.5.30.105",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/28": [
+                {
+                    "host": "CN86K3L99P",
+                    "ip": "10.5.30.35",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/3": [
+                {
+                    "host": "CN86K3L9J4",
+                    "ip": "10.5.30.23",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/31": [
+                {
+                    "chassis_id": "fc75.e602.42e2",
+                    "host": "P1BM-FAC5BN-EPSB4F-OUL2-1",
+                    "ip": null,
+                    "port": "xe1"
+                }
+            ],
+            "TenGigabitEthernet1/0/33": [
+                {
+                    "chassis_id": "fc75.e602.7063",
+                    "host": "P1BM-FAC5BN-EPSB5F-OUL2-1",
+                    "ip": null,
+                    "port": "xe1"
+                }
+            ],
+            "TenGigabitEthernet1/0/34": [
+                {
+                    "host": "CN86K3L8Y5",
+                    "ip": "10.5.30.22",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/35": [
+                {
+                    "host": "P1BM-ADM01-IDCC2F-OUL2-5.ecopro.co.kr",
+                    "ip": "10.5.30.36",
+                    "platform": "cisco WS-C2960S-24TS-L",
+                    "port": "GigabitEthernet1/0/25"
+                }
+            ],
+            "TenGigabitEthernet1/0/4": [
+                {
+                    "host": "CN86K3L9N9",
+                    "ip": "10.5.30.24",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/48": [
+                {
+                    "chassis_id": "d4ad.bde0.5000",
+                    "host": "P1BM-ADM01-IDCC2F-OUBB-2",
+                    "ip": "10.5.30.253",
+                    "port": "Te1/0/48"
+                }
+            ],
+            "TenGigabitEthernet1/0/5": [
+                {
+                    "host": "CN86K3L9WH",
+                    "ip": "10.5.30.25",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/6": [
+                {
+                    "host": "CN86K3L8WZ",
+                    "ip": "20.20.1.25",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/7": [
+                {
+                    "host": "CN86K3L8XK",
+                    "ip": "10.5.30.27",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/8": [
+                {
+                    "host": "CN86K3LB7Y",
+                    "ip": "10.5.30.20",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ],
+            "TenGigabitEthernet1/0/9": [
+                {
+                    "host": "CN86K3L9DV",
+                    "ip": "10.5.30.28",
+                    "platform": "hpe1920S_24G",
+                    "port": "25"
+                }
+            ]
+        },
+        "ansible_net_operatingmode": "controller",
+        "ansible_net_python_version": "3.14.4",
+        "ansible_net_serialnum": "FOC2338T49U",
+        "ansible_net_stacked_models": [
+            "WS-C3850-48XS"
+        ],
+        "ansible_net_stacked_serialnums": [
+            "FOC2338T49U"
+        ],
+        "ansible_net_system": "ios",
+        "ansible_net_version": "16.06.05",
+        "ansible_net_virtual_switch": "STACK",
+        "ansible_network_resources": {}
+    },
+    "changed": false,
+    "deprecations": [
+        {
+            "collection_name": "ansible.builtin",
+            "deprecator": {
+                "resolved_name": "ansible.builtin",
+                "type": null
+            },
+            "msg": "Importing 'to_bytes' from 'ansible.module_utils._text' is deprecated.",
+            "version": "2.24"
+        },
+        {
+            "collection_name": "ansible.builtin",
+            "deprecator": {
+                "resolved_name": "ansible.builtin",
+                "type": null
+            },
+            "msg": "Importing 'to_text' from 'ansible.module_utils._text' is deprecated.",
+            "version": "2.24"
+        },
+        {
+            "collection_name": "ansible.builtin",
+            "deprecator": {
+                "resolved_name": "ansible.builtin",
+                "type": null
+            },
+            "msg": "The `ansible.module_utils.common._collections_compat` module is deprecated.",
+            "version": "2.24"
+        },
+        {
+            "collection_name": "ansible.builtin",
+            "deprecator": {
+                "resolved_name": "ansible.builtin",
+                "type": null
+            },
+            "msg": "Passing `warnings` to `exit_json` or `fail_json` is deprecated.",
+            "version": "2.23"
+        }
+    ],
+    "failed": false,
+    "warnings": [
+        "ansible-pylibssh not installed, falling back to paramiko"
+    ]
+}

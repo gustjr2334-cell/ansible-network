@@ -107,6 +107,9 @@
           "/tmp/switch_backups/{{ inventory_hostname }}_{{ run_timestamp }}.cfg" \
           {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}/
       delegate_to: localhost
+      throttle: 1       # <--- [추가] NAS로는 파일 전송을 한 번에 1건씩 순차 처리
+      retries: 3        # <--- [추가] 순간적인 NAS 접속 거절 발생 시 3회 재시도
+      delay: 2
       register: scp_result
 
     - name: NAS 전송 로그 확인
