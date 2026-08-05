@@ -12,9 +12,10 @@
     nas_backup_path: "/volume1/cisco_BK/2026_L3_Backup"
 
   tasks:
-    - name: 실행 시점 타임스탬프 변수 생성 및 고정
+    - name: 실행 시점 타임스탬프 및 날짜 변수 생성
       set_fact:
         run_timestamp: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
+        run_date: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"   # <--- [추가] 날짜 폴더용 변수 (예: 2026-08-05)
       delegate_to: localhost
       run_once: true
 
@@ -65,12 +66,12 @@
         )
 
         child = pexpect.spawn(ssh_cmd, encoding="utf-8", timeout=40)
-        
+
         # 1. SSH 비밀번호 입력
         idx = child.expect(["[Pp]assword:", pexpect.EOF, pexpect.TIMEOUT])
         if idx == 0:
             child.sendline("{{ hostvars[inventory_hostname].ansible_password | default(hostvars[inventory_hostname].ansible_ssh_pass | default("")) }}")
-        
+
         # 2. 프롬프트 확인 및 enable 처리
         idx = child.expect([">", "#", pexpect.TIMEOUT])
         if idx == 0:
@@ -78,13 +79,13 @@
             child.expect("[Pp]assword:")
             child.sendline("{{ hostvars[inventory_hostname].ansible_enable_pass | default(hostvars[inventory_hostname].ansible_password | default("")) }}")
             child.expect("#")
-        
+
         # 3. 화면 끊김 방지(paging) 및 config 출력 명령
         child.sendline("terminal length 0")
         child.expect("#")
         child.sendline("show running-config")
         child.expect("#")
-        
+
         # 4. 수집 결과만 출력
         print(child.before)
         child.sendline("exit")
@@ -99,16 +100,29 @@
         dest: "/tmp/switch_backups/{{ inventory_hostname }}_{{ run_timestamp }}.cfg"
       delegate_to: localhost
 
+    # <--- [추가] NAS에 날짜별 백업 폴더 생성
+    - name: Synology NAS에 오늘 날짜 폴더 생성
+      ansible.builtin.shell: |
+        sshpass -p '{{ nas_pw }}' ssh -p 22 \
+          -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null \
+          {{ nas_user }}@{{ nas_ip }} \
+          "mkdir -p {{ nas_backup_path }}/{{ run_date }}"
+      delegate_to: localhost
+      run_once: true     # <--- 전체 호스트 통틀어 1회만 실행 (폴더 중복 생성 시도 방지)
+      changed_when: false
+
+    # <--- [수정] NAS 날짜 폴더 내부로 scp 전송
     - name: Synology NAS 지정 경로로 파일 자동 전송
       ansible.builtin.shell: |
         sshpass -p '{{ nas_pw }}' scp -O -P 22 \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
           "/tmp/switch_backups/{{ inventory_hostname }}_{{ run_timestamp }}.cfg" \
-          {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}/
+          {{ nas_user }}@{{ nas_ip }}:{{ nas_backup_path }}/{{ run_date }}/
       delegate_to: localhost
-      throttle: 1       # <--- [추가] NAS로는 파일 전송을 한 번에 1건씩 순차 처리
-      retries: 3        # <--- [추가] 순간적인 NAS 접속 거절 발생 시 3회 재시도
+      throttle: 1
+      retries: 3
       delay: 2
       register: scp_result
 
