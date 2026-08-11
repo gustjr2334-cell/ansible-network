@@ -1,6 +1,6 @@
 ---
 - name: "[Step 1] 장비 상태 수집 및 이상 판정"
-  hosts: all_devices
+  hosts: all
   gather_facts: false
   vars:
     cpu_threshold: 80
