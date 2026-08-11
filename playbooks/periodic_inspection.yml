@@ -1,0 +1,72 @@
+---
+- name: [Step 1] 장비 상태 수집 및 이상 판정
+  hosts: all_devices
+  gather_facts: false
+  vars:
+    cpu_threshold: 80
+    mem_threshold: 85
+
+  tasks:
+    # 1. 장비 리소스 정보 수집
+    - name: 장비 리소스 상태 수집
+      ansible.builtin.setup:
+        gather_subset:
+          - 'hardware'
+
+    # 2. 수치 가공
+    - name: 사용률 계산
+      ansible.builtin.set_fact:
+        parsed_cpu: "{{ (100 - (ansible_processor_idle_time | default(20))) | round(1) }}"
+        parsed_mem: "{{ ((1 - (ansible_memfree_mb / ansible_memtotal_mb)) * 100) | round(1) }}"
+
+    # 3. 임계치 비교 후 판정
+    - name: 상태 평가
+      ansible.builtin.set_fact:
+        device_status:
+          name: "{{ inventory_hostname }}"
+          ip: "{{ ansible_host | default(inventory_hostname) }}"
+          cpu_usage: "{{ parsed_cpu }}"
+          mem_usage: "{{ parsed_mem }}"
+          status: "{{ '점검필요' if (parsed_cpu | float > cpu_threshold or parsed_mem | float > mem_threshold) else '양호' }}"
+          details: >-
+            {% if parsed_cpu | float > cpu_threshold and parsed_mem | float > mem_threshold %}CPU/메모리 임계치 초과
+            {% elif parsed_cpu | float > cpu_threshold %}CPU 임계치 초과
+            {% elif parsed_mem | float > mem_threshold %}메모리 임계치 초과
+            {% else %}특이사항 없음{% endif %}
+
+    # 4. AWX 컨트롤러(localhost)로 집계
+    - name: 결과 데이터 취합
+      ansible.builtin.set_fact:
+        all_results: "{{ ansible_play_hosts | map('extract', hostvars, 'device_status') | list }}"
+      run_once: true
+      delegate_to: localhost
+
+- name: [Step 2] PDF 생성 및 메일 발송
+  hosts: localhost
+  gather_facts: false
+  vars:
+    mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
+    mail_port: 25                     # SMTP 포트
+    mail_from: "jhs@ecopro.co.kr" # 보낼 사람 이메일
+    mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
+
+  tasks:
+    - name: Jinja2 HTML 보고서 생성
+      ansible.builtin.template:
+        src: ../templates/inspection_report.j2
+        dest: /tmp/inspection_report.html
+
+    - name: WeasyPrint로 PDF 변환
+      ansible.builtin.command:
+        cmd: weasyprint /tmp/inspection_report.html /tmp/Periodic_Inspection_Report.pdf
+
+    - name: PDF 첨부 메일 발송
+      community.general.mail:
+        host: "{{ mail_host }}"
+        port: "{{ mail_port }}"
+        subject: "[정기점검] {{ lookup('pipe', 'date +%Y-%m-%d') }} 인프라 장비 정기점검 보고서"
+        body: "안녕하세요. 자동화 시스템에서 생성된 정기점검 PDF 보고서를 첨부합니다."
+        from: "{{ mail_from }}"
+        to: "{{ mail_to }}"
+        attach:
+          - /tmp/Periodic_Inspection_Report.pdf
