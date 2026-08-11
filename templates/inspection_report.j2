@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page { size: A4; margin: 15mm; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; margin: 0; padding: 0; }
+        .header { border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { margin: 0; color: #0f172a; font-size: 20px; }
+        .date { font-size: 11px; color: #64748b; margin-top: 6px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; font-size: 11px; }
+        th { background-color: #f1f5f9; color: #334155; font-weight: bold; }
+        .badge-good { color: #15803d; font-weight: bold; }
+        .badge-warning { color: #b91c1c; font-weight: bold; background-color: #fef2f2; padding: 2px 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>인프라 장비 정기점검 종합 보고서</h1>
+        <div class="date">점검 생성 시각: {{ lookup('pipe', 'date "+%Y-%m-%d %H:%M:%S"') }}</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>장비명</th>
+                <th>IP 주소</th>
+                <th>CPU 사용률</th>
+                <th>메모리 사용률</th>
+                <th>점검 결과</th>
+                <th>상세 내용</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in hostvars['localhost']['all_results'] %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.ip }}</td>
+                <td>{{ item.cpu_usage }}%</td>
+                <td>{{ item.mem_usage }}%</td>
+                <td>
+                    {% if item.status == '양호' %}
+                        <span class="badge-good">양호</span>
+                    {% else %}
+                        <span class="badge-warning">점검필요</span>
+                    {% endif %}
+                </td>
+                <td>{{ item.details }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
