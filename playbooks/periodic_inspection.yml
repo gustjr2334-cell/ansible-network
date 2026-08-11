@@ -1,5 +1,5 @@
 ---
-- name: [Step 1] 장비 상태 수집 및 이상 판정
+- name: "[Step 1] 장비 상태 수집 및 이상 판정"
   hosts: all_devices
   gather_facts: false
   vars:
@@ -41,7 +41,7 @@
       run_once: true
       delegate_to: localhost
 
-- name: [Step 2] PDF 생성 및 메일 발송
+- name: "[Step 2] PDF 생성 및 메일 발송"
   hosts: localhost
   gather_facts: false
   vars:
