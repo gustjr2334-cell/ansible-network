@@ -88,11 +88,27 @@
         src: ../templates/inspection_report.j2
         dest: /tmp/inspection_report.html
 
-    - name: WeasyPrint로 PDF 변환
-      ansible.builtin.command:
-        cmd: weasyprint /tmp/inspection_report.html /tmp/Periodic_Inspection_Report.pdf
+    # WeasyPrint 대신 Python xhtml2pdf 모듈을 임시 설치 및 활용하여 변환
+    - name: xhtml2pdf 파이썬 패키지 확인 및 설치
+      ansible.builtin.pip:
+        name: xhtml2pdf
+        state: present
+      ignore_errors: true
 
-    - name: PDF 첨부 메일 발송
+    - name: HTML을 PDF로 변환 (Python 라이브러리 활용)
+      ansible.builtin.shell: |
+        python3 -c "
+        from xhtml2pdf import pisa
+        with open('/tmp/inspection_report.html', 'r', encoding='utf-8') as html_file:
+            html_content = html_file.read()
+        with open('/tmp/Periodic_Inspection_Report.pdf', 'wb') as pdf_file:
+            pisa.CreatePDF(html_content, dest=pdf_file)
+        "
+      register: pdf_result
+      ignore_errors: true
+
+    # 만약 위 변환이 실패할 경우 HTML 파일 그대로 첨부 메일 발송
+    - name: PDF 첨부 메일 발송 (PDF 생성 실패 시 HTML 첨부)
       community.general.mail:
         host: "{{ mail_host }}"
         port: "{{ mail_port }}"
@@ -101,4 +117,4 @@
         from: "{{ mail_from }}"
         to: "{{ mail_to }}"
         attach:
-          - /tmp/Periodic_Inspection_Report.pdf
+          - "{{ '/tmp/Periodic_Inspection_Report.pdf' if (pdf_result is succeeded) else '/tmp/inspection_report.html' }}"
