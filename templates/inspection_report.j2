@@ -12,6 +12,7 @@
     th { background-color: #ebf8ff; color: #2c5282; font-weight: bold; }
     .badge-ok { background-color: #c6f6d5; color: #22543d; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
     .badge-warn { background-color: #fed7d7; color: #9b2c2c; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+    .badge-info { background-color: #e2e8f0; color: #4a5568; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
     pre { background: #f7fafc; border: 1px solid #e2e8f0; padding: 6px; font-size: 7.5pt; white-space: pre-wrap; word-wrap: break-word; font-family: monospace; }
 </style>
 </head>
@@ -29,7 +30,7 @@
             <th>환경 상태(Power/Fan)</th>
             <th>Err-Disable 포트</th>
             <th>EtherChannel</th>
-            <th>HSRP/VRRP</th>
+            <th>VRRP 상태</th>
         </tr>
     </thead>
     <tbody>
@@ -50,8 +51,13 @@
                 {% else %}<span class="badge-warn">{{ dev.eth_status }}</span>{% endif %}
             </td>
             <td>
-                {% if dev.hsrp_status == '정상' %}<span class="badge-ok">정상</span>
-                {% else %}<span class="badge-warn">{{ dev.hsrp_status }}</span>{% endif %}
+                {% if 'Master' in dev.vrrp_status or 'Backup' in dev.vrrp_status %}
+                    <span class="badge-ok">{{ dev.vrrp_status }}</span>
+                {% elif 'Init' in dev.vrrp_status %}
+                    <span class="badge-warn">{{ dev.vrrp_status }}</span>
+                {% else %}
+                    <span class="badge-info">{{ dev.vrrp_status }}</span>
+                {% endif %}
             </td>
         </tr>
         {% endfor %}
@@ -65,9 +71,9 @@
     <pre>{{ dev.raw_cpu }}</pre>
     <p><b>[Memory Top Processes]</b></p>
     <pre>{{ dev.raw_mem }}</pre>
-    {% if dev.raw_err_int | trim != '' %}
-        <p><b>[Err-Disabled Interfaces]</b></p>
-        <pre>{{ dev.raw_err_int }}</pre>
+    {% if dev.raw_vrrp | trim != '' %}
+        <p><b>[VRRP Status]</b></p>
+        <pre>{{ dev.raw_vrrp }}</pre>
     {% endif %}
     <hr style="border: 0.5px dashed #e2e8f0; margin-top: 15px;">
 {% endfor %}
