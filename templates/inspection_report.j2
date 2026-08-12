@@ -41,7 +41,7 @@
             line-height: 1.6;
         }
 
-        /* 테이블 레이아웃 자동 조절 및 컬럼 폭 고정 */
+        /* 테이블 레이아웃 고정 및 설정 */
         table { 
             width: 100%; 
             border-collapse: collapse; 
@@ -52,9 +52,9 @@
 
         th, td { 
             border: 1px solid #cbd5e0; 
-            padding: 8px 6px; 
+            padding: 8px 5px; 
             text-align: center; 
-            word-break: break-all; /* 긴 장비명이 칸을 넘치지 않게 자동 줄바꿈 */
+            word-break: break-all;
             vertical-align: middle;
         }
 
@@ -68,17 +68,18 @@
             background-color: #f7fafc; 
         }
 
-        /* 컬럼별 폭 지정 (총 100%) */
-        .col-devname { width: 34%; text-align: left; padding-left: 8px; font-size: 0.8em; } /* 장비명 너비 확보 */
-        .col-ip      { width: 20%; }
-        .col-env     { width: 15%; }
-        .col-err     { width: 15%; }
-        .col-vrrp    { width: 16%; }
+        /* 컬럼별 폭 및 폰트 크기 지정 (합계 100%) */
+        .col-devname { width: 31%; text-align: left; padding-left: 6px; font-size: 8.5pt; } /* IP 주소와 동일 크기 */
+        .col-ip      { width: 19%; font-size: 8.5pt; }                                  /* 장비명과 동일 크기 */
+        .col-power   { width: 12%; }
+        .col-cpu     { width: 12%; }
+        .col-temp    { width: 12%; }
+        .col-opinion { width: 14%; font-weight: bold; }
 
-        /* 상태 색상 */
+        /* 상태 색상 스타일 */
         .status-ok   { color: #2b6cb0; font-weight: bold; }
-        .status-warn { color: #dd6b20; font-weight: bold; }
         .status-fail { color: #e53e3e; font-weight: bold; }
+        .status-warn { color: #dd6b20; font-weight: bold; }
 
         pre { 
             background-color: #edf2f7; 
@@ -92,7 +93,7 @@
 </head>
 <body>
 
-    <!-- 데이터 미리 집계 (localhost 제외 및 실제 장비 대수 계산) -->
+    <!-- 데이터 미리 집계 (localhost 제외 및 컬럼 매핑) -->
     {% set ns = namespace(results=[], target_count=0) %}
     {% for host in groups['all'] %}
       {% if host != 'localhost' %}
@@ -103,9 +104,10 @@
           {% set ns.results = ns.results + [{
             'name': host,
             'ip': hostvars[host].ansible_host | default(host),
-            'env_status': '접속실패',
-            'err_int_status': '접속실패',
-            'vrrp_status': '접속실패',
+            'power_status': '접속실패',
+            'cpu_val': 'N/A',
+            'temp_val': 'N/A',
+            'overall_status': '비정상',
             'raw_env': '수집실패(접속오류)',
             'raw_cpu': '수집실패(접속오류)',
             'raw_mem': '수집실패(접속오류)',
@@ -129,24 +131,29 @@
             <tr>
                 <th class="col-devname">장비명</th>
                 <th class="col-ip">IP 주소</th>
-                <th class="col-env">환경/전원</th>
-                <th class="col-err">에러 포트</th>
-                <th class="col-vrrp">VRRP 상태</th>
+                <th class="col-power">전원</th>
+                <th class="col-cpu">CPU</th>
+                <th class="col-temp">장비온도</th>
+                <th class="col-opinion">종합의견</th>
             </tr>
         </thead>
         <tbody>
             {% for item in ns.results %}
+            {% set is_ok = (item.power_status in ['정상', 'OK', 'Normal']) and (item.overall_status | default('정상') in ['정상', 'OK', 'Normal']) %}
             <tr>
                 <td class="col-devname">{{ item.name }}</td>
                 <td class="col-ip">{{ item.ip }}</td>
-                <td class="col-env {% if item.env_status == '정상' %}status-ok{% else %}status-fail{% endif %}">
-                    {{ item.env_status }}
+                <td class="col-power {% if item.power_status in ['정상', 'OK', 'Normal'] %}status-ok{% else %}status-fail{% endif %}">
+                    {{ item.power_status | default('정상') }}
                 </td>
-                <td class="col-err {% if item.err_int_status == '정상' %}status-ok{% else %}status-fail{% endif %}">
-                    {{ item.err_int_status }}
+                <td class="col-cpu">
+                    {{ item.cpu_val | default('N/A') }}
                 </td>
-                <td class="col-vrrp {% if item.vrrp_status in ['Master', 'Backup', '정상'] %}status-ok{% else %}status-warn{% endif %}">
-                    {{ item.vrrp_status }}
+                <td class="col-temp">
+                    {{ item.temp_val | default('N/A') }}
+                </td>
+                <td class="col-opinion {% if is_ok %}status-ok{% else %}status-fail{% endif %}">
+                    {% if is_ok %}정상{% else %}비정상{% endif %}
                 </td>
             </tr>
             {% endfor %}
