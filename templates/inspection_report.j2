@@ -65,17 +65,25 @@
 </table>
 
 <h2>2. 장비별 상세 주요 로그 및 모니터링 수치</h2>
-{% for dev in all_results %}
-    <h3>▶ {{ dev.name }} ({{ dev.ip }})</h3>
-    <p><b>[CPU Top Processes]</b></p>
-    <pre>{{ dev.raw_cpu }}</pre>
-    <p><b>[Memory Top Processes]</b></p>
-    <pre>{{ dev.raw_mem }}</pre>
-    {% if dev.raw_vrrp | trim != '' %}
-        <p><b>[VRRP Status]</b></p>
-        <pre>{{ dev.raw_vrrp }}</pre>
-    {% endif %}
-    <hr style="border: 0.5px dashed #e2e8f0; margin-top: 15px;">
+{% set all_results = [] %}
+{% for host in ansible_play_hosts_all %}
+  {% if hostvars[host].device_status is defined %}
+    {% set _ = all_results.append(hostvars[host].device_status) %}
+  {% else %}
+    {% set _ = all_results.append({
+      'name': host,
+      'ip': hostvars[host].ansible_host | default(host),
+      'env_status': '접속실패',
+      'err_int_status': '접속실패',
+      'eth_status': '접속실패',
+      'vrrp_status': '접속실패',
+      'raw_env': '수집실패(접속오류)',
+      'raw_cpu': '수집실패(접속오류)',
+      'raw_mem': '수집실패(접속오류)',
+      'raw_err_int': '수집실패(접속오류)',
+      'raw_vrrp': '수집실패(접속오류)'
+    }) %}
+  {% endif %}
 {% endfor %}
 
 </body>
