@@ -139,14 +139,13 @@
       register: scp_result
       ignore_errors: true
 
-    - name: 장비별 백업/전송 결과 정보 바인딩
+- name: 장비별 백업/전송 결과 정보 바인딩
       ansible.builtin.set_fact:
         backup_info:
           name: "{{ inventory_hostname }}"
           status: "{{ '성공' if (scp_result is succeeded) else '실패' }}"
           file_name: "{{ inventory_hostname }}_{{ run_timestamp }}.cfg"
 
-    # [추가] 전체 작업 완료 후 메일 발송
     - name: 각 장비별 백업 결과 데이터 집계 (Localhost)
       ansible.builtin.set_fact:
         all_backup_results: >-
@@ -158,7 +157,7 @@
             {%- else -%}
               {%- set _ = results.append({'name': host, 'status': '실패', 'file_name': 'N/A'}) -%}
             {%- endif -%}
-          {%- for_end -%}
+          {%- endfor -%}
           {{ results }}
       delegate_to: localhost
       run_once: true
