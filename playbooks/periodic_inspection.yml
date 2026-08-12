@@ -5,9 +5,13 @@
   vars:
     ansible_connection: network_cli
     ansible_network_os: cisco.ios.ios
-    ansible_ssh_extra_args: "-o KexAlgorithms=+diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa"
-    
-    # Enable 모드(#) 진입 설정
+
+    # 구형 시스코 장비용 SSH KEX / HostKey / Cipher 암호화 허용 옵션 확장
+    ansible_ssh_extra_args: >-
+      -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256
+      -o HostKeyAlgorithms=+ssh-rsa,ssh-dss
+      -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc,aes128-ctr,aes192-ctr,aes256-ctr
+
     ansible_become: true
     ansible_become_method: enable
 
@@ -26,11 +30,11 @@
       register: check_common
       ignore_errors: true
 
-    # 2. L3/이중화 명령어 실행 (HSRP/EtherChannel 등 미지원 장비 에러 방지)
-    - name: 이중화 및 스패닝트리 명령어 실행
+    # 2. VRRP 및 L2 이중화 명령어 실행 (show vrrp brief 적용)
+    - name: VRRP 및 이중화 명령어 실행
       cisco.ios.ios_command:
         commands:
-          - show standby brief
+          - show vrrp brief
           - show etherchannel summary
           - show spanning-tree summary
       register: check_redundancy
@@ -44,10 +48,10 @@
         dev_mem: "{{ check_common.stdout[3] if (check_common.stdout is defined and check_common.stdout | length > 3) else '' }}"
         dev_err_int: "{{ check_common.stdout[4] if (check_common.stdout is defined and check_common.stdout | length > 4) else '' }}"
         dev_cnt_err: "{{ check_common.stdout[5] if (check_common.stdout is defined and check_common.stdout | length > 5) else '' }}"
-        dev_hsrp: "{{ check_redundancy.stdout[0] if (check_redundancy.stdout is defined and check_redundancy.stdout | length > 0) else '' }}"
+        dev_vrrp: "{{ check_redundancy.stdout[0] if (check_redundancy.stdout is defined and check_redundancy.stdout | length > 0) else '' }}"
         dev_eth: "{{ check_redundancy.stdout[1] if (check_redundancy.stdout is defined and check_redundancy.stdout | length > 1) else '' }}"
 
-    # 4. 장비별 상태 종합
+    # 4. 장비별 상태 및 VRRP State (Master/Backup/Init) 종합 평가
     - name: 장비별 종합 점검 결과 요약 구조체 생성
       ansible.builtin.set_fact:
         device_status:
@@ -56,14 +60,18 @@
           env_status: "{{ '점검필요' if ('FAIL' in dev_env or 'Faulty' in dev_env) else '정상' }}"
           err_int_status: "{{ '에러포트존재' if (dev_err_int | regex_search('(Gi|Fa|Te|Two|Fo|Ten)[0-9/]+')) else '정상' }}"
           eth_status: "{{ '점검필요' if ('(D)' in dev_eth or '(s)' in dev_eth) else '정상' }}"
-          hsrp_status: "{{ '점검필요' if ('Init' in dev_hsrp) else '정상' }}"
+          vrrp_status: >-
+            {% if 'Init' in dev_vrrp or 'INIT' in dev_vrrp or 'Fault' in dev_vrrp %}Init/비정상
+            {% elif 'Master' in dev_vrrp or 'MASTER' in dev_vrrp %}Master
+            {% elif 'Backup' in dev_vrrp or 'BACKUP' in dev_vrrp %}Backup
+            {% else %}미설정/N/A{% endif %}
           raw_env: "{{ dev_env }}"
           raw_cpu: "{{ dev_cpu.splitlines()[:5] | join('\n') if dev_cpu != '' else '수집실패' }}"
           raw_mem: "{{ dev_mem.splitlines()[:5] | join('\n') if dev_mem != '' else '수집실패' }}"
           raw_err_int: "{{ dev_err_int }}"
-          raw_cnt_err: "{{ dev_cnt_err }}"
+          raw_vrrp: "{{ dev_vrrp }}"
 
-    # 5. AWX 컨트롤러(localhost)로 집계
+    # 5. AWX 컨트롤러(localhost)로 데이터 집계
     - name: AWX 컨트롤러(localhost)로 전 장비 데이터 집계
       ansible.builtin.set_fact:
         all_results: "{{ ansible_play_hosts | map('extract', hostvars, 'device_status') | list }}"
