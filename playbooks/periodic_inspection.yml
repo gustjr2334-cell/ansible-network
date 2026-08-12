@@ -6,16 +6,15 @@
   vars:
     ansible_network_os: cisco.ios.ios
   tasks:
-    - name: 장비 상태 정보 수집 (Cisco IOS 기준 예시)
+    - name: 장비 상태 정보 수집 (Cisco IOS/IOS-XE 대응)
       cisco.ios.ios_command:
         commands:
-          - show environment
+          - show environment status
           - show processes cpu sorted | exclude 0.00%
           - show memory statistics
           - show interfaces status | include err-disabled
           - show vrrp brief
       vars:
-        # 태스크 수준에서 network_cli 및 OS 종류 강제 재정의 (인벤토리 변수 덮어쓰기)
         ansible_connection: network_cli
         ansible_network_os: cisco.ios.ios
       register: inspect_raw
@@ -26,15 +25,19 @@
         device_status:
           name: "{{ inventory_hostname }}"
           ip: "{{ ansible_host | default(inventory_hostname) }}"
-          power_status: "{{ '비정상' if ('FAIL' in (inspect_raw.stdout[0] | default('') | upper)) else '정상' }}"
+          # 전원 상태 (FAIL/CRITICAL 문구 검사)
+          power_status: "{{ '비정상' if ('FAIL' in (inspect_raw.stdout[0] | default('') | upper) or 'CRITICAL' in (inspect_raw.stdout[0] | default('') | upper)) else '정상' }}"
+          # CPU 사용량 파싱 (CPU utilization ... 추출)
           cpu_val: "{{ (inspect_raw.stdout[1] | default('') | regex_search('CPU utilization for five seconds: ([0-9]+%)', '\\1'))[0] | default('15%') }}"
+          # 장비 온도 파싱 (숫자+C 패턴 추출)
           temp_val: "{{ (inspect_raw.stdout[0] | default('') | regex_search('([0-9]+)\\s*C', '\\1'))[0] | default('32') }}°C"
-          overall_status: "{{ '비정상' if inspect_raw is failed else '정상' }}"
-          raw_env: "{{ inspect_raw.stdout[0] | default('수집 실패 또는 명령 미지원') }}"
-          raw_cpu: "{{ inspect_raw.stdout[1] | default('수집 실패 또는 명령 미지원') }}"
-          raw_mem: "{{ inspect_raw.stdout[2] | default('수집 실패 또는 명령 미지원') }}"
-          raw_err_int: "{{ inspect_raw.stdout[3] | default('수집 실패 또는 에러 포트 없음') }}"
-          raw_vrrp: "{{ inspect_raw.stdout[4] | default('수집 실패 또는 VRRP 미설정') }}"
+          # 종합 의견 (수집 실패 시 비정상, 그 외 정상)
+          overall_status: "{{ '비정상' if (inspect_raw is failed or inspect_raw.stdout is not defined) else '정상' }}"
+          raw_env: "{{ inspect_raw.stdout[0] if (inspect_raw.stdout is defined and inspect_raw.stdout[0] is defined) else '수집 실패 또는 명령 미지원' }}"
+          raw_cpu: "{{ inspect_raw.stdout[1] if (inspect_raw.stdout is defined and inspect_raw.stdout[1] is defined) else '수집 실패 또는 명령 미지원' }}"
+          raw_mem: "{{ inspect_raw.stdout[2] if (inspect_raw.stdout is defined and inspect_raw.stdout[2] is defined) else '수집 실패 또는 명령 미지원' }}"
+          raw_err_int: "{{ inspect_raw.stdout[3] if (inspect_raw.stdout is defined and inspect_raw.stdout[3] is defined) else '수집 실패 또는 에러 포트 없음' }}"
+          raw_vrrp: "{{ inspect_raw.stdout[4] if (inspect_raw.stdout is defined and inspect_raw.stdout[4] is defined) else '수집 실패 또는 VRRP 미설정' }}"
       when: inventory_hostname != 'localhost'
 
 
