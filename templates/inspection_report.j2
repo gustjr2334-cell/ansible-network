@@ -4,7 +4,18 @@
     <meta charset="UTF-8">
     <title>네트워크 장비 정밀 점검 보고서</title>
     <style>
-        body { font-family: 'NanumGothic', 'Malgun Gothic', sans-serif; margin: 20px; color: #333; }
+        /* 저장소 안의 폰트 파일 매핑 */
+        @font-face {
+            font-family: 'NanumGothic';
+            src: url('files/NanumGothic.ttf');
+        }
+
+        /* 문서 내 전체 요소에 한글 폰트 적용 강제 */
+        body, table, td, th, h1, h2, h3, h4, p, span, pre, div { 
+            font-family: 'NanumGothic', sans-serif !important; 
+        }
+
+        body { margin: 20px; color: #333; }
         h1 { color: #1a365d; border-bottom: 2px solid #2b6cb0; padding-bottom: 10px; }
         h2 { color: #2c5282; margin-top: 30px; }
         .meta-info { margin-bottom: 20px; font-size: 0.9em; color: #4a5568; }
@@ -15,7 +26,7 @@
         .status-ok { color: #2b6cb0; font-weight: bold; }
         .status-warn { color: #dd6b20; font-weight: bold; }
         .status-fail { color: #e53e3e; font-weight: bold; }
-        pre { background-color: #edf2f7; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 0.8em; white-space: pre-wrap; word-break: break-all; }
+        pre { background-color: #edf2f7; padding: 10px; border-radius: 4px; font-size: 0.8em; white-space: pre-wrap; word-break: break-all; }
     </style>
 </head>
 <body>
