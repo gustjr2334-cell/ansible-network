@@ -111,11 +111,11 @@
     mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
 
   tasks:
-    # 한국 시간(KST / UTC+9) 계산 및 변수 생성
+    # 한국 표준시(Asia/Seoul) 기준 날짜 및 시간 계산
     - name: 현재 날짜 및 KST 시간 변수 정의
       ansible.builtin.set_fact:
-        today_date: "{{ now(fmt='%Y-%m-%d') }}"
-        kst_time_str: "{{ (now(utc=true) + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S') }}"
+        today_date: "{{ now(tz='Asia/Seoul', fmt='%Y-%m-%d') }}"
+        kst_time_str: "{{ now(tz='Asia/Seoul', fmt='%Y-%m-%d %H:%M:%S') }}"
 
     - name: Jinja2 HTML 보고서 생성
       ansible.builtin.template:
