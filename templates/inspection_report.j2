@@ -1,90 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-<meta charset="utf-8">
-<style>
-    @page { size: A4 portrait; margin: 15mm; }
-    body { font-family: 'NanumGothic', 'Malgun Gothic', sans-serif; font-size: 10pt; line-height: 1.4; color: #333; }
-    h1 { color: #1a365d; font-size: 18pt; border-bottom: 2px solid #2b6cb0; padding-bottom: 5px; margin-bottom: 15px; }
-    h2 { color: #2c5282; font-size: 13pt; margin-top: 20px; border-left: 4px solid #3182ce; padding-left: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 15px; }
-    th, td { border: 1px solid #cbd5e0; padding: 6px 8px; text-align: left; font-size: 8.5pt; }
-    th { background-color: #ebf8ff; color: #2c5282; font-weight: bold; }
-    .badge-ok { background-color: #c6f6d5; color: #22543d; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
-    .badge-warn { background-color: #fed7d7; color: #9b2c2c; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
-    .badge-info { background-color: #e2e8f0; color: #4a5568; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
-    pre { background: #f7fafc; border: 1px solid #e2e8f0; padding: 6px; font-size: 7.5pt; white-space: pre-wrap; word-wrap: break-word; font-family: monospace; }
-</style>
+    <meta charset="UTF-8">
+    <title>네트워크 장비 정밀 점검 보고서</title>
+    <style>
+        body { font-family: 'NanumGothic', 'Malgun Gothic', sans-serif; margin: 20px; color: #333; }
+        h1 { color: #1a365d; border-bottom: 2px solid #2b6cb0; padding-bottom: 10px; }
+        h2 { color: #2c5282; margin-top: 30px; }
+        .meta-info { margin-bottom: 20px; font-size: 0.9em; color: #4a5568; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.85em; }
+        th, td { border: 1px solid #cbd5e0; padding: 8px 10px; text-align: left; }
+        th { background-color: #ebf8ff; color: #2c5282; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f7fafc; }
+        .status-ok { color: #2b6cb0; font-weight: bold; }
+        .status-warn { color: #dd6b20; font-weight: bold; }
+        .status-fail { color: #e53e3e; font-weight: bold; }
+        pre { background-color: #edf2f7; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 0.8em; white-space: pre-wrap; word-break: break-all; }
+    </style>
 </head>
 <body>
 
-<h1>네트워크 인프라 정기 점검 보고서</h1>
-<p><b>점검 일자:</b> {{ now(fmt='%Y-%m-%d %H:%M:%S') }}</p>
+    <h1>네트워크 장비 정밀 점검 보고서</h1>
+    <div class="meta-info">
+        <p><strong>점검 일시:</strong> {{ now(fmt='%Y-%m-%d %H:%M:%S') }}</p>
+        <p><strong>점검 대상 장비 수:</strong> {{ ansible_play_hosts_all | length }} 대</p>
+    </div>
 
-<h2>1. 종합 점검 현황 요약</h2>
-<table>
-    <thead>
-        <tr>
-            <th>장비명</th>
-            <th>IP 주소</th>
-            <th>환경 상태(Power/Fan)</th>
-            <th>Err-Disable 포트</th>
-            <th>EtherChannel</th>
-            <th>VRRP 상태</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for dev in all_results %}
-        <tr>
-            <td><b>{{ dev.name }}</b></td>
-            <td>{{ dev.ip }}</td>
-            <td>
-                {% if dev.env_status == '정상' %}<span class="badge-ok">정상</span>
-                {% else %}<span class="badge-warn">{{ dev.env_status }}</span>{% endif %}
-            </td>
-            <td>
-                {% if dev.err_int_status == '정상' %}<span class="badge-ok">정상</span>
-                {% else %}<span class="badge-warn">{{ dev.err_int_status }}</span>{% endif %}
-            </td>
-            <td>
-                {% if dev.eth_status == '정상' %}<span class="badge-ok">정상</span>
-                {% else %}<span class="badge-warn">{{ dev.eth_status }}</span>{% endif %}
-            </td>
-            <td>
-                {% if 'Master' in dev.vrrp_status or 'Backup' in dev.vrrp_status %}
-                    <span class="badge-ok">{{ dev.vrrp_status }}</span>
-                {% elif 'Init' in dev.vrrp_status %}
-                    <span class="badge-warn">{{ dev.vrrp_status }}</span>
-                {% else %}
-                    <span class="badge-info">{{ dev.vrrp_status }}</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <!-- 변수 수집 처리 (Namespace 활용) -->
+    {% set ns = namespace(results=[]) %}
+    {% for host in ansible_play_hosts_all %}
+      {% if hostvars[host].device_status is defined %}
+        {% set ns.results = ns.results + [hostvars[host].device_status] %}
+      {% else %}
+        {% set ns.results = ns.results + [{
+          'name': host,
+          'ip': hostvars[host].ansible_host | default(host),
+          'env_status': '접속실패',
+          'err_int_status': '접속실패',
+          'eth_status': '접속실패',
+          'vrrp_status': '접속실패',
+          'raw_env': '수집실패(접속오류)',
+          'raw_cpu': '수집실패(접속오류)',
+          'raw_mem': '수집실패(접속오류)',
+          'raw_err_int': '수집실패(접속오류)',
+          'raw_vrrp': '수집실패(접속오류)'
+        }] %}
+      {% endif %}
+    {% endfor %}
 
-<h2>2. 장비별 상세 주요 로그 및 모니터링 수치</h2>
-{% set all_results = [] %}
-{% for host in ansible_play_hosts_all %}
-  {% if hostvars[host].device_status is defined %}
-    {% set _ = all_results.append(hostvars[host].device_status) %}
-  {% else %}
-    {% set _ = all_results.append({
-      'name': host,
-      'ip': hostvars[host].ansible_host | default(host),
-      'env_status': '접속실패',
-      'err_int_status': '접속실패',
-      'eth_status': '접속실패',
-      'vrrp_status': '접속실패',
-      'raw_env': '수집실패(접속오류)',
-      'raw_cpu': '수집실패(접속오류)',
-      'raw_mem': '수집실패(접속오류)',
-      'raw_err_int': '수집실패(접속오류)',
-      'raw_vrrp': '수집실패(접속오류)'
-    }) %}
-  {% endif %}
-{% endfor %}
+    <h2>1. 전 장비 종합 점검 요약</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>장비명</th>
+                <th>IP 주소</th>
+                <th>환경/전원</th>
+                <th>에러 포트</th>
+                <th>EtherChannel</th>
+                <th>VRRP 상태</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dev in ns.results %}
+            <tr>
+                <td><strong>{{ dev.name }}</strong></td>
+                <td>{{ dev.ip }}</td>
+                <td class="{{ 'status-fail' if dev.env_status in ['점검필요','접속실패'] else 'status-ok' }}">{{ dev.env_status }}</td>
+                <td class="{{ 'status-warn' if dev.err_int_status == '에러포트존재' else ('status-fail' if dev.err_int_status == '접속실패' else 'status-ok') }}">{{ dev.err_int_status }}</td>
+                <td class="{{ 'status-warn' if dev.eth_status == '점검필요' else ('status-fail' if dev.eth_status == '접속실패' else 'status-ok') }}">{{ dev.eth_status }}</td>
+                <td class="{{ 'status-warn' if dev.vrrp_status in ['Init/비정상'] else ('status-fail' if dev.vrrp_status == '접속실패' else 'status-ok') }}">{{ dev.vrrp_status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>2. 장비별 상세 수집 데이터</h2>
+    {% for dev in ns.results %}
+    <h3>[{{ dev.name }}] - {{ dev.ip }}</h3>
+    
+    <h4>[환경 및 상태 (Environment)]</h4>
+    <pre>{{ dev.raw_env }}</pre>
+
+    <h4>[CPU 사용량 Top 5]</h4>
+    <pre>{{ dev.raw_cpu }}</pre>
+
+    <h4>[메모리 사용량 Top 5]</h4>
+    <pre>{{ dev.raw_mem }}</pre>
+
+    <h4>[에러 포트 및 인터페이스 상태]</h4>
+    <pre>{{ dev.raw_err_int }}</pre>
+
+    <h4>[VRRP 상태 요약]</h4>
+    <pre>{{ dev.raw_vrrp }}</pre>
+    <hr>
+    {% endfor %}
 
 </body>
 </html>
