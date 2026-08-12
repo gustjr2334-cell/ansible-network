@@ -59,29 +59,52 @@
 # 수집 데이터 변수 정리 (set_fact)
     - name: 수집 데이터 변수 정리 (set_fact)
       ansible.builtin.set_fact:
+        p_status: >-
+          {%- set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) -%}
+          {%- set env_upper = env_raw | upper -%}
+          {%- if 'PS1: FAIL' in env_upper or 'POWER SUPPLY FAIL' in env_upper or 'POWER FAULT' in env_upper or 'SYSTEM POWER FAULT' in env_upper -%}
+            비정상
+          {%- else -%}
+            정상
+          {%- endif -%}
+        c_status: >-
+          {%- set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '' -%}
+          {%- set matched_cpu = cpu_out | regex_findall('CPU utilization for five seconds: ([0-9]+%)') -%}
+          {{ matched_cpu | first if matched_cpu else '12%' }}
+        t_status: >-
+          {%- set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) -%}
+          {%- set temp_candidates = env_raw | regex_findall('(?i)(?:temp|temperature)[^0-9]*([1-7][0-9])\\s*c') -%}
+          {%- if temp_candidates | length > 0 -%}
+            {{ temp_candidates | first }}°C
+          {%- else -%}
+            {%- set alt_candidates = env_raw | regex_findall('([2-5][0-9])\\s*C') -%}
+            {{ (alt_candidates | first if alt_candidates else '32') }}°C
+          {%- endif -%}
+      when: inventory_hostname != 'localhost'
+
+    - name: 항목별 비정상 여부 파악 및 종합의견(overall_status) 계산
+      ansible.builtin.set_fact:
         device_status:
           name: "{{ inventory_hostname }}"
           ip: "{{ ansible_host | default(inventory_hostname) }}"
-          power_status: >-
-            {%- set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) -%}
-            {%- set env_upper = env_raw | upper -%}
-            {%- if 'PS1: FAIL' in env_upper or 'POWER SUPPLY FAIL' in env_upper or 'POWER FAULT' in env_upper or 'SYSTEM POWER FAULT' in env_upper -%}
-              비정상
-            {%- else -%}
+          power_status: "{{ p_status }}"
+          cpu_val: "{{ c_status }}"
+          temp_val: "{{ t_status }}"
+          overall_status: >-
+            {%- set p_is_fail = (p_status != '정상') -%}
+            {%- set cpu_int = (c_status | regex_replace('[^0-9]', '')) | int(default=0) -%}
+            {%- set c_is_fail = (cpu_int >= 80 or res_cpu is failed) -%}
+            {%- set temp_int = (t_status | regex_replace('[^0-9]', '')) | int(default=0) -%}
+            {%- set t_is_fail = (temp_int >= 60) -%}
+            
+            {%- if not p_is_fail and not c_is_fail and not t_is_fail -%}
               정상
-            {%- endif -%}
-          cpu_val: >-
-            {%- set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '' -%}
-            {%- set matched_cpu = cpu_out | regex_findall('CPU utilization for five seconds: ([0-9]+%)') -%}
-            {{ matched_cpu | first if matched_cpu else '12%' }}
-          temp_val: >-
-            {%- set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) -%}
-            {%- set temp_candidates = env_raw | regex_findall('(?i)(?:temp|temperature)[^0-9]*([1-7][0-9])\\s*c') -%}
-            {%- if temp_candidates | length > 0 -%}
-              {{ temp_candidates | first }}°C
             {%- else -%}
-              {%- set alt_candidates = env_raw | regex_findall('([2-5][0-9])\\s*C') -%}
-              {{ (alt_candidates | first if alt_candidates else '32') }}°C
+              비정상({{[
+                '전원' if p_is_fail else '',
+                'CPU' if c_is_fail else '',
+                '온도' if t_is_fail else ''
+              ] | reject('equalto', '') | join(', ')}})
             {%- endif -%}
           raw_env: "{{ (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '수집 실패')) }}"
           raw_cpu: "{{ (res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '수집 실패') }}"
