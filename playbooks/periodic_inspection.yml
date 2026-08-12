@@ -83,6 +83,13 @@
     mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
 
   tasks:
+    # 저장소의 폰트 파일을 절대 경로(/tmp)로 확실하게 복사
+    - name: 저장소 한글 폰트를 /tmp 경로로 복사
+      ansible.builtin.copy:
+        src: ../files/NanumGothic.ttf
+        dest: /tmp/NanumGothic.ttf
+        mode: '0644'
+
     - name: Jinja2 HTML 보고서 생성
       ansible.builtin.template:
         src: ../templates/inspection_report.j2
@@ -96,7 +103,7 @@
         state: present
       ignore_errors: true
 
-    - name: HTML을 PDF로 변환 (저장소 폰트 레지스트리 강제 등록)
+    - name: HTML을 PDF로 변환 (절대 경로 폰트 등록 및 변환)
       ansible.builtin.shell: |
         python3 -c "
         import os
@@ -104,12 +111,14 @@
         from reportlab.pdfbase.ttfonts import TTFont
         from xhtml2pdf import pisa
 
-        # Git 저장소 내 폰트 파일 경로 지정
-        font_path = os.path.abspath('files/NanumGothic.ttf')
+        font_path = '/tmp/NanumGothic.ttf'
         
-        # ReportLab 엔진에 한글 폰트 명시적 등록
+        # 폰트 파일 정상 존재 확인 후 ReportLab 엔진에 등록
         if os.path.exists(font_path):
             pdfmetrics.registerFont(TTFont('NanumGothic', font_path))
+            print('Font registered successfully.')
+        else:
+            raise FileNotFoundError('Font file not found at /tmp/NanumGothic.ttf')
 
         with open('/tmp/inspection_report.html', 'r', encoding='utf-8') as html_file:
             html_content = html_file.read()
