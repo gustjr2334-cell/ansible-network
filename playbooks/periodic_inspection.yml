@@ -2,6 +2,9 @@
 - name: "[Step 1] 네트워크 장비 정밀 점검 및 데이터 수집"
   hosts: all
   gather_facts: false
+  connection: network_cli
+  vars:
+    ansible_network_os: cisco.ios.ios
   tasks:
     - name: 장비 상태 정보 수집 (Cisco IOS 기준 예시)
       cisco.ios.ios_command:
@@ -11,6 +14,10 @@
           - show memory statistics
           - show interfaces status | include err-disabled
           - show vrrp brief
+      vars:
+        # 태스크 수준에서 network_cli 및 OS 종류 강제 재정의 (인벤토리 변수 덮어쓰기)
+        ansible_connection: network_cli
+        ansible_network_os: cisco.ios.ios
       register: inspect_raw
       ignore_errors: true
 
