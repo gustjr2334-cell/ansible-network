@@ -119,9 +119,15 @@
   gather_facts: false
   vars:
     mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
-    mail_port: 25                     # SMTP 포트
-    mail_from: "jhs@ecopro.co.kr" # 보낼 사람 이메일
-    mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
+    mail_port: 25                       # SMTP 포트
+    mail_from: "jhs@ecopro.co.kr"       # 보낼 사람 이메일
+    mail_to:                            # 지정 수신자 5인
+      - "jhs@ecopro.co.kr"
+      - "charlesj@ecopro.co.kr"
+      - "smpark2@ecopro.co.kr"
+      - "jukim2@ecopro.co.kr"
+      - "tgkim11@ecopropn.com"
+      - "shmin3@ecopropn.com"
 
   tasks:
     - name: KST 날짜 및 시간 정보 추출
