@@ -2,16 +2,13 @@
 - name: "[Step 1] 네트워크 장비 정밀 종합 점검"
   hosts: all
   gather_facts: false
+  ignore_unreachable: true
   vars:
-    # 시스코 CLI 모듈 필수 접속 방식
     ansible_connection: network_cli
     ansible_network_os: cisco.ios.ios
-
-    # Enable 모드(#) 진입 설정
     ansible_become: true
     ansible_become_method: enable
 
-    # AWX Paramiko SSH 엔진용 구형 장비 KEX / Cipher 암호화 허용 옵션
     ansible_paramiko_kex_algorithms: "diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256"
     ansible_paramiko_ciphers: "aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc,aes128-ctr,aes192-ctr,aes256-ctr"
     ansible_paramiko_host_key_auto_add: true
@@ -28,12 +25,9 @@
           - show processes memory sort
           - show interface status err-disabled
           - show interface count error
-          - show logging
+          - show logging | include ERROR|FAIL|WARN|CRIT|DOWN
       register: check_common
       ignore_errors: true
-      until: check_common is not failed
-      retries: 3
-      delay: 5
 
     # 2. VRRP 및 L2 이중화 명령어 실행
     - name: VRRP 및 이중화 명령어 실행
@@ -45,16 +39,17 @@
       register: check_redundancy
       ignore_errors: true
 
-    # 3. 수집 데이터 파싱
+    # 3. 수집 데이터 파싱 (미수집 시 빈값 처리)
     - name: 점검 결과 텍스트 데이터 파싱 및 이상 유무 판정
       ansible.builtin.set_fact:
-        dev_env: "{{ check_common.stdout[1] if (check_common.stdout is defined and check_common.stdout | length > 1) else '' }}"
-        dev_cpu: "{{ check_common.stdout[2] if (check_common.stdout is defined and check_common.stdout | length > 2) else '' }}"
-        dev_mem: "{{ check_common.stdout[3] if (check_common.stdout is defined and check_common.stdout | length > 3) else '' }}"
-        dev_err_int: "{{ check_common.stdout[4] if (check_common.stdout is defined and check_common.stdout | length > 4) else '' }}"
-        dev_cnt_err: "{{ check_common.stdout[5] if (check_common.stdout is defined and check_common.stdout | length > 5) else '' }}"
-        dev_vrrp: "{{ check_redundancy.stdout[0] if (check_redundancy.stdout is defined and check_redundancy.stdout | length > 0) else '' }}"
-        dev_eth: "{{ check_redundancy.stdout[1] if (check_redundancy.stdout is defined and check_redundancy.stdout | length > 1) else '' }}"
+        dev_env: "{{ check_common.stdout[2] if (check_common is defined and check_common.stdout is defined and check_common.stdout | length > 2) else '' }}"
+        dev_cpu: "{{ check_common.stdout[3] if (check_common is defined and check_common.stdout is defined and check_common.stdout | length > 3) else '' }}"
+        dev_mem: "{{ check_common.stdout[4] if (check_common is defined and check_common.stdout is defined and check_common.stdout | length > 4) else '' }}"
+        dev_err_int: "{{ check_common.stdout[5] if (check_common is defined and check_common.stdout is defined and check_common.stdout | length > 5) else '' }}"
+        dev_cnt_err: "{{ check_common.stdout[6] if (check_common is defined and check_common.stdout is defined and check_common.stdout | length > 6) else '' }}"
+        dev_vrrp: "{{ check_redundancy.stdout[0] if (check_redundancy is defined and check_redundancy.stdout is defined and check_redundancy.stdout | length > 0) else '' }}"
+        dev_eth: "{{ check_redundancy.stdout[1] if (check_redundancy is defined and check_redundancy.stdout is defined and check_redundancy.stdout | length > 1) else '' }}"
+      ignore_errors: true
 
     # 4. 장비별 상태 및 VRRP State 종합 평가
     - name: 장비별 종합 점검 결과 요약 구조체 생성
@@ -62,26 +57,21 @@
         device_status:
           name: "{{ inventory_hostname }}"
           ip: "{{ ansible_host | default(inventory_hostname) }}"
-          env_status: "{{ '점검필요' if ('FAIL' in dev_env or 'Faulty' in dev_env) else '정상' }}"
-          err_int_status: "{{ '에러포트존재' if (dev_err_int | regex_search('(Gi|Fa|Te|Two|Fo|Ten)[0-9/]+')) else '정상' }}"
-          eth_status: "{{ '점검필요' if ('(D)' in dev_eth or '(s)' in dev_eth) else '정상' }}"
+          env_status: "{{ '접속실패' if (check_common is not defined or check_common is failed) else ('점검필요' if ('FAIL' in dev_env or 'Faulty' in dev_env) else '정상') }}"
+          err_int_status: "{{ '접속실패' if (check_common is not defined or check_common is failed) else ('에러포트존재' if (dev_err_int | regex_search('(Gi|Fa|Te|Two|Fo|Ten)[0-9/]+')) else '정상') }}"
+          eth_status: "{{ '접속실패' if (check_redundancy is not defined or check_redundancy is failed) else ('점검필요' if ('(D)' in dev_eth or '(s)' in dev_eth) else '정상') }}"
           vrrp_status: >-
-            {% if 'Init' in dev_vrrp or 'INIT' in dev_vrrp or 'Fault' in dev_vrrp %}Init/비정상
+            {% if check_redundancy is not defined or check_redundancy is failed %}접속실패
+            {% elif 'Init' in dev_vrrp or 'INIT' in dev_vrrp or 'Fault' in dev_vrrp %}Init/비정상
             {% elif 'Master' in dev_vrrp or 'MASTER' in dev_vrrp %}Master
             {% elif 'Backup' in dev_vrrp or 'BACKUP' in dev_vrrp %}Backup
             {% else %}미설정/N/A{% endif %}
-          raw_env: "{{ dev_env }}"
-          raw_cpu: "{{ dev_cpu.splitlines()[:5] | join('\n') if dev_cpu != '' else '수집실패' }}"
-          raw_mem: "{{ dev_mem.splitlines()[:5] | join('\n') if dev_mem != '' else '수집실패' }}"
-          raw_err_int: "{{ dev_err_int }}"
-          raw_vrrp: "{{ dev_vrrp }}"
-
-    # 5. AWX 컨트롤러(localhost)로 데이터 집계
-    - name: AWX 컨트롤러(localhost)로 전 장비 데이터 집계
-      ansible.builtin.set_fact:
-        all_results: "{{ ansible_play_hosts | map('extract', hostvars, 'device_status') | list }}"
-      run_once: true
-      delegate_to: localhost
+          raw_env: "{{ dev_env if dev_env != '' else '수집실패(접속오류)' }}"
+          raw_cpu: "{{ dev_cpu.splitlines()[:5] | join('\n') if dev_cpu != '' else '수집실패(접속오류)' }}"
+          raw_mem: "{{ dev_mem.splitlines()[:5] | join('\n') if dev_mem != '' else '수집실패(접속오류)' }}"
+          raw_err_int: "{{ dev_err_int if dev_err_int != '' else '수집실패(접속오류)' }}"
+          raw_vrrp: "{{ dev_vrrp if dev_vrrp != '' else '수집실패(접속오류)' }}"
+      ignore_errors: true
 
 - name: "[Step 2] PDF 보고서 생성 및 메일 발송"
   hosts: localhost
