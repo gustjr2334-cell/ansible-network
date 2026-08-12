@@ -96,33 +96,32 @@
         state: present
       ignore_errors: true
 
-    - name: HTML을 PDF로 변환 (저장소 내 TTF 폰트 자동 탐색 및 등록)
+    - name: HTML을 PDF로 변환 (NanumGothic-Regular.ttf 등록 및 변환)
       ansible.builtin.shell: |
         python3 -c "
         import os
+        import shutil
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
         from xhtml2pdf import pisa
 
-        # AWX 프로젝트 경로 내에서 모든 .ttf 폰트 파일 자동 탐색
-        font_path = None
         search_dir = '/runner/project' if os.path.exists('/runner/project') else '.'
+        target_font = '/tmp/NanumGothic-Regular.ttf'
         
+        # 저장소 내 NanumGothic-Regular.ttf 파일 찾아서 /tmp/NanumGothic-Regular.ttf 복사
         for root, dirs, files in os.walk(search_dir):
             for file in files:
-                if file.lower().endswith('.ttf'):
-                    font_path = os.path.join(root, file)
+                if file == 'NanumGothic-Regular.ttf' or file.lower().endswith('.ttf'):
+                    src_path = os.path.join(root, file)
+                    shutil.copy(src_path, target_font)
+                    print(f'Font copied: {src_path} -> {target_font}')
                     break
-            if font_path:
-                break
 
-        # 폰트를 발견하면 ReportLab 엔진에 'NanumGothic'이라는 이름으로 강제 등록
-        if font_path:
-            print(f'Font found and registering: {font_path}')
-            pdfmetrics.registerFont(TTFont('NanumGothic', font_path))
-        else:
-            print('Warning: No TTF font file found in project.')
+        # ReportLab 엔진 등록
+        if os.path.exists(target_font):
+            pdfmetrics.registerFont(TTFont('NanumGothic', target_font))
 
+        # xhtml2pdf 변환
         with open('/tmp/inspection_report.html', 'r', encoding='utf-8') as html_file:
             html_content = html_file.read()
 
