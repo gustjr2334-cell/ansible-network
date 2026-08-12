@@ -106,7 +106,7 @@
       community.general.mail:
         host: "{{ mail_host }}"
         port: "{{ mail_port }}"
-        subject: "[정기점검] {{ lookup('pipe', 'date +%Y-%m-%d') }} 인프라 네트워크 장비 정밀 점검 보고서"
+        subject: "[정기점검] {{ now(fmt='%Y-%m-%d') }} 인프라 네트워크 장비 정밀 점검 보고서"
         body: "안녕하세요. AWX 자동화 시스템에서 생성된 네트워크 장비 종합 점검 보고서를 첨부합니다."
         from: "{{ mail_from }}"
         to: "{{ mail_to }}"
