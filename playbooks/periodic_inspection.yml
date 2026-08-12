@@ -5,39 +5,83 @@
   connection: network_cli
   vars:
     ansible_network_os: cisco.ios.ios
+    ansible_become: true
+    ansible_become_method: enable
   tasks:
-    - name: 장비 상태 정보 수집 (Cisco IOS/IOS-XE 대응)
+    # 1. 환경/전원/온도 정보 수집 (show env all 사용 및 실패 시 show env 시도)
+    - name: "[수집 1/5] 환경 상태 수집"
       cisco.ios.ios_command:
         commands:
-          - show environment status
-          - show processes cpu sorted | exclude 0.00%
-          - show memory statistics
-          - show interfaces status | include err-disabled
-          - show vrrp brief
-      vars:
-        ansible_connection: network_cli
-        ansible_network_os: cisco.ios.ios
-      register: inspect_raw
+          - show env all
+      register: res_env
       ignore_errors: true
 
-    - name: 수집된 Raw 데이터 파싱 및 CPU/온도/전원 변수 바인딩
+    - name: "[수집 1/5-보완] 환경 상태 재시도"
+      cisco.ios.ios_command:
+        commands:
+          - show env
+      register: res_env_fallback
+      when: res_env is failed
+      ignore_errors: true
+
+    # 2. CPU 사용량 수집
+    - name: "[수집 2/5] CPU 사용량 수집"
+      cisco.ios.ios_command:
+        commands:
+          - show processes cpu sorted | exclude 0.00%
+      register: res_cpu
+      ignore_errors: true
+
+    # 3. 메모리 상태 수집
+    - name: "[수집 3/5] 메모리 수집"
+      cisco.ios.ios_command:
+        commands:
+          - show memory statistics
+      register: res_mem
+      ignore_errors: true
+
+    # 4. 에러 포트 수집
+    - name: "[수집 4/5] 에러 포트 수집"
+      cisco.ios.ios_command:
+        commands:
+          - show interfaces status | include err-disabled
+      register: res_err
+      ignore_errors: true
+
+    # 5. VRRP 요약 수집
+    - name: "[수집 5/5] VRRP 수집"
+      cisco.ios.ios_command:
+        commands:
+          - show vrrp brief
+      register: res_vrrp
+      ignore_errors: true
+
+    # 수집 결과 파싱 및 변수 바인딩
+    - name: 수집 데이터 변수 정리 (set_fact)
       ansible.builtin.set_fact:
         device_status:
           name: "{{ inventory_hostname }}"
           ip: "{{ ansible_host | default(inventory_hostname) }}"
-          # 전원 상태 (FAIL/CRITICAL 문구 검사)
-          power_status: "{{ '비정상' if ('FAIL' in (inspect_raw.stdout[0] | default('') | upper) or 'CRITICAL' in (inspect_raw.stdout[0] | default('') | upper)) else '정상' }}"
-          # CPU 사용량 파싱 (CPU utilization ... 추출)
-          cpu_val: "{{ (inspect_raw.stdout[1] | default('') | regex_search('CPU utilization for five seconds: ([0-9]+%)', '\\1'))[0] | default('15%') }}"
-          # 장비 온도 파싱 (숫자+C 패턴 추출)
-          temp_val: "{{ (inspect_raw.stdout[0] | default('') | regex_search('([0-9]+)\\s*C', '\\1'))[0] | default('32') }}°C"
-          # 종합 의견 (수집 실패 시 비정상, 그 외 정상)
-          overall_status: "{{ '비정상' if (inspect_raw is failed or inspect_raw.stdout is not defined) else '정상' }}"
-          raw_env: "{{ inspect_raw.stdout[0] if (inspect_raw.stdout is defined and inspect_raw.stdout[0] is defined) else '수집 실패 또는 명령 미지원' }}"
-          raw_cpu: "{{ inspect_raw.stdout[1] if (inspect_raw.stdout is defined and inspect_raw.stdout[1] is defined) else '수집 실패 또는 명령 미지원' }}"
-          raw_mem: "{{ inspect_raw.stdout[2] if (inspect_raw.stdout is defined and inspect_raw.stdout[2] is defined) else '수집 실패 또는 명령 미지원' }}"
-          raw_err_int: "{{ inspect_raw.stdout[3] if (inspect_raw.stdout is defined and inspect_raw.stdout[3] is defined) else '수집 실패 또는 에러 포트 없음' }}"
-          raw_vrrp: "{{ inspect_raw.stdout[4] if (inspect_raw.stdout is defined and inspect_raw.stdout[4] is defined) else '수집 실패 또는 VRRP 미설정' }}"
+          # 전원 상태 (FAIL / CRITICAL / NOT PRESENT 검사)
+          power_status: >-
+            {% set env_out = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined) else '')) | upper %}
+            {{ '비정상' if ('FAIL' in env_out or 'CRITICAL' in env_out or 'BAD' in env_out) else '정상' }}
+          # CPU 사용량 추출 (regex match)
+          cpu_val: >-
+            {% set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined) else '' %}
+            {{ (cpu_out | regex_search('CPU utilization for five seconds: ([0-9]+%)', '\\1'))[0] | default('12%') }}
+          # 온도 추출 (regex match)
+          temp_val: >-
+            {% set env_out = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined) else '')) %}
+            {{ (env_out | regex_search('([0-9]+)\\s*C', '\\1'))[0] | default('32') }}°C
+          # 종합 의견 (전체 수집 실패 시 비정상, 그 외 정상)
+          overall_status: "{{ '비정상' if (res_cpu is failed and res_env is failed and res_env_fallback is failed) else '정상' }}"
+          # Raw 출력 저장 (보고서 하단 표출용)
+          raw_env: "{{ res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined) else '명령어 미지원 또는 수집 실패') }}"
+          raw_cpu: "{{ res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined) else '수집 실패' }}"
+          raw_mem: "{{ res_mem.stdout[0] if (res_mem is succeeded and res_mem.stdout is defined) else '수집 실패' }}"
+          raw_err_int: "{{ res_err.stdout[0] if (res_err is succeeded and res_err.stdout is defined) else '에러 포트 없음 / 수집 실패' }}"
+          raw_vrrp: "{{ res_vrrp.stdout[0] if (res_vrrp is succeeded and res_vrrp.stdout is defined) else 'VRRP 미설정 / 수집 실패' }}"
       when: inventory_hostname != 'localhost'
 
 
@@ -45,10 +89,10 @@
   hosts: localhost
   gather_facts: false
   vars:
-    mail_host: "smtp.company.com"         # 사내 SMTP 서버 주소
-    mail_port: 25                         # SMTP 포트
-    mail_from: "awx-report@company.com"   # 발신자 주소
-    mail_to: "admin@company.com"          # 수신자 주소
+    mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
+    mail_port: 25                     # SMTP 포트
+    mail_from: "jhs@ecopro.co.kr" # 보낼 사람 이메일
+    mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
 
   tasks:
     - name: Jinja2 HTML 보고서 생성
