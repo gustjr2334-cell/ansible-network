@@ -59,45 +59,65 @@
     # 수집 결과 정밀 파싱 및 변수 바인딩
     - name: 수집 데이터 변수 정리 (set_fact)
       ansible.builtin.set_fact:
-        device_status:
-          name: "{{ inventory_hostname }}"
-          ip: "{{ ansible_host | default(inventory_hostname) }}"
+        device_status: >-
+          {% set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) %}
+          {% set env_upper = env_raw | upper %}
+          
+          {# 1. 전원 상태 판정 #}
+          {% if 'PS1: FAIL' in env_upper or 'POWER SUPPLY FAIL' in env_upper or 'POWER FAULT' in env_upper or 'SYSTEM POWER FAULT' in env_upper %}
+            {% set calc_power = '비정상' %}
+          {% else %}
+            {% set calc_power = '정상' %}
+          {% endif %}
 
-          # [전원 상태 정밀 판정]
-          power_status: >-
-            {% set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) | upper %}
-            {% if 'PS1: FAIL' in env_raw or 'POWER SUPPLY FAIL' in env_raw or 'POWER FAULT' in env_raw or 'SYSTEM POWER FAULT' in env_raw %}
-              비정상
-            {% else %}
-              정상
-            {% endif %}
+          {# 2. CPU 사용량 판정 #}
+          {% set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '' %}
+          {% set matched_cpu = cpu_out | regex_findall('CPU utilization for five seconds: ([0-9]+%)') %}
+          {% set calc_cpu = matched_cpu | first if matched_cpu else '12%' %}
+          {% set cpu_num = calc_cpu | regex_replace('[^0-9]', '') | int %}
 
-          # [CPU 사용량 정밀 추출]
-          cpu_val: >-
-            {% set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '' %}
-            {% set matched_cpu = cpu_out | regex_findall('CPU utilization for five seconds: ([0-9]+%)') %}
-            {{ matched_cpu | first if matched_cpu else '12%' }}
+          {# 3. 온도 판정 #}
+          {% set temp_candidates = env_raw | regex_findall('(?i)(?:temp|temperature)[^0-9]*([1-7][0-9])\\s*c') %}
+          {% if temp_candidates | length > 0 %}
+            {% set calc_temp = temp_candidates | first ~ '°C' %}
+            {% set temp_num = temp_candidates | first | int %}
+          {% else %}
+            {% set alt_candidates = env_raw | regex_findall('([2-5][0-9])\\s*C') %}
+            {% set calc_temp = (alt_candidates | first if alt_candidates else '32') ~ '°C' %}
+            {% set temp_num = (alt_candidates | first if alt_candidates else '32') | int %}
+          {% endif %}
 
-          # [장비 온도 정밀 추출]
-          temp_val: >-
-            {% set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) %}
-            {% set temp_candidates = env_raw | regex_findall('(?i)(?:temp|temperature)[^0-9]*([1-7][0-9])\\s*c') %}
-            {% if temp_candidates | length > 0 %}
-              {{ temp_candidates | first }}°C
-            {% else %}
-              {% set alt_candidates = env_raw | regex_findall('([2-5][0-9])\\s*C') %}
-              {{ alt_candidates | first if alt_candidates else '32' }}°C
-            {% endif %}
+          {# 4. 종합 의견 원인별 조합 생성 #}
+          {% set fail_reasons = [] %}
+          {% if calc_power != '정상' %}
+            {% set fail_reasons = fail_reasons + ['전원'] %}
+          {% endif %}
+          {% if cpu_num >= 80 or res_cpu is failed %}
+            {% set fail_reasons = fail_reasons + ['CPU'] %}
+          {% endif %}
+          {% if temp_num >= 60 %}
+            {% set fail_reasons = fail_reasons + ['온도'] %}
+          {% endif %}
 
-          # [종합 의견 기본 상태]
-          overall_status: "{{ '비정상' if (res_cpu is failed and res_env is failed and res_env_fallback is failed) else '정상' }}"
+          {% if fail_reasons | length == 0 %}
+            {% set calc_overall = '정상' %}
+          {% else %}
+            {% set calc_overall = '비정상(' ~ fail_reasons | join(', ') ~ ')' %}
+          {% endif %}
 
-          # [Raw 출력 저장]
-          raw_env: "{{ res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '명령어 미지원 또는 수집 실패') }}"
-          raw_cpu: "{{ res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '수집 실패' }}"
-          raw_mem: "{{ res_mem.stdout[0] if (res_mem is succeeded and res_mem.stdout is defined and res_mem.stdout | length > 0) else '수집 실패' }}"
-          raw_err_int: "{{ res_err.stdout[0] if (res_err is succeeded and res_err.stdout is defined and res_err.stdout | length > 0) else '에러 포트 없음 / 수집 실패' }}"
-          raw_vrrp: "{{ res_vrrp.stdout[0] if (res_vrrp is succeeded and res_vrrp.stdout is defined and res_vrrp.stdout | length > 0) else 'VRRP 미설정 / 수집 실패' }}"
+          {
+            "name": "{{ inventory_hostname }}",
+            "ip": "{{ ansible_host | default(inventory_hostname) }}",
+            "power_status": "{{ calc_power }}",
+            "cpu_val": "{{ calc_cpu }}",
+            "temp_val": "{{ calc_temp }}",
+            "overall_status": "{{ calc_overall }}",
+            "raw_env": {{ (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '명령어 미지원 또는 수집 실패')) | to_json }},
+            "raw_cpu": {{ (res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '수집 실패') | to_json }},
+            "raw_mem": {{ (res_mem.stdout[0] if (res_mem is succeeded and res_mem.stdout is defined and res_mem.stdout | length > 0) else '수집 실패') | to_json }},
+            "raw_err_int": {{ (res_err.stdout[0] if (res_err is succeeded and res_err.stdout is defined and res_err.stdout | length > 0) else '에러 포트 없음 / 수집 실패') | to_json }},
+            "raw_vrrp": {{ (res_vrrp.stdout[0] if (res_vrrp is succeeded and res_vrrp.stdout is defined and res_vrrp.stdout | length > 0) else 'VRRP 미설정 / 수집 실패') | to_json }}
+          }
       when: inventory_hostname != 'localhost'
 
 
@@ -105,13 +125,13 @@
   hosts: localhost
   gather_facts: false
   vars:
-    mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
-    mail_port: 25                     # SMTP 포트
-    mail_from: "jhs@ecopro.co.kr" # 보낼 사람 이메일
-    mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
+    mail_host: "smtp.company.com"         # 사내 SMTP 서버 주소
+    mail_port: 25                         # SMTP 포트
+    mail_from: "awx-report@company.com"   # 발신자 주소
+    mail_to: "admin@company.com"          # 수신자 주소
 
   tasks:
-    # Python을 직접 호출하여 UTC+9 시간 추출 (Ansible 버전 호환성 문제 완전 방지)
+    # Python을 직접 호출하여 UTC+9 시간 추출
     - name: KST 날짜 및 시간 정보 추출
       ansible.builtin.command:
         cmd: python3 -c "from datetime import datetime, timezone, timedelta; kst = datetime.now(timezone(timedelta(hours=9))); print(kst.strftime('%Y-%m-%d')); print(kst.strftime('%Y-%m-%d %H:%M:%S'))"
