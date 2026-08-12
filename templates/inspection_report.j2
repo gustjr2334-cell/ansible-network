@@ -37,25 +37,27 @@
         <p><strong>점검 대상 장비 수:</strong> {{ ansible_play_hosts_all | length }} 대</p>
     </div>
 
-    <!-- 변수 수집 처리 (Namespace 활용) -->
+   <!-- 변수 수집 처리 (groups['all'] 참조 및 localhost 제외) -->
     {% set ns = namespace(results=[]) %}
-    {% for host in ansible_play_hosts_all %}
-      {% if hostvars[host].device_status is defined %}
-        {% set ns.results = ns.results + [hostvars[host].device_status] %}
-      {% else %}
-        {% set ns.results = ns.results + [{
-          'name': host,
-          'ip': hostvars[host].ansible_host | default(host),
-          'env_status': '접속실패',
-          'err_int_status': '접속실패',
-          'eth_status': '접속실패',
-          'vrrp_status': '접속실패',
-          'raw_env': '수집실패(접속오류)',
-          'raw_cpu': '수집실패(접속오류)',
-          'raw_mem': '수집실패(접속오류)',
-          'raw_err_int': '수집실패(접속오류)',
-          'raw_vrrp': '수집실패(접속오류)'
-        }] %}
+    {% for host in groups['all'] %}
+      {% if host != 'localhost' %}
+        {% if hostvars[host].device_status is defined %}
+          {% set ns.results = ns.results + [hostvars[host].device_status] %}
+        {% else %}
+          {% set ns.results = ns.results + [{
+            'name': host,
+            'ip': hostvars[host].ansible_host | default(host),
+            'env_status': '접속실패',
+            'err_int_status': '접속실패',
+            'eth_status': '접속실패',
+            'vrrp_status': '접속실패',
+            'raw_env': '수집실패(접속오류)',
+            'raw_cpu': '수집실패(접속오류)',
+            'raw_mem': '수집실패(접속오류)',
+            'raw_err_int': '수집실패(접속오류)',
+            'raw_vrrp': '수집실패(접속오류)'
+          }] %}
+        {% endif %}
       {% endif %}
     {% endfor %}
 
