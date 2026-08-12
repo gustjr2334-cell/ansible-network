@@ -11,11 +11,20 @@
     nas_pw: "rkdgksit1@"
     nas_backup_path: "/volume1/cisco_BK/2026_L3_Backup"
 
+    # 메일 발송 설정
+    mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
+    mail_port: 25                       # SMTP 포트
+    mail_from: "jhs@ecopro.co.kr"       # 보낼 사람 이메일
+    mail_to:                              # 수신자 목록 5인
+      - "jhs@ecopro.co.kr"
+      - "tgkim11@ecopropn.com"
+
   tasks:
     - name: 실행 시점 타임스탬프 및 날짜 변수 생성
       set_fact:
         run_timestamp: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
-        run_date: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"   # <--- [추가] 날짜 폴더용 변수 (예: 2026-08-05)
+        run_date: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"   # 날짜 폴더용 변수 (예: 2026-08-12)
+        run_time_full: "{{ lookup('pipe', 'date \"+%Y-%m-%d %H:%M:%S\"') }}"
       delegate_to: localhost
       run_once: true
 
@@ -92,6 +101,7 @@
         '
       delegate_to: localhost
       register: switch_config
+      ignore_errors: true
       changed_when: false
 
     - name: 수집한 백업 파일 로컬 저장
@@ -99,8 +109,10 @@
         content: "{{ switch_config.stdout }}"
         dest: "/tmp/switch_backups/{{ inventory_hostname }}_{{ run_timestamp }}.cfg"
       delegate_to: localhost
+      when: switch_config is succeeded and switch_config.stdout is defined and switch_config.stdout | length > 0
+      ignore_errors: true
 
-    # <--- [추가] NAS에 날짜별 백업 폴더 생성
+    # NAS에 날짜별 백업 폴더 생성
     - name: Synology NAS에 오늘 날짜 폴더 생성
       ansible.builtin.shell: |
         sshpass -p '{{ nas_pw }}' ssh -p 22 \
@@ -109,10 +121,10 @@
           {{ nas_user }}@{{ nas_ip }} \
           "mkdir -p {{ nas_backup_path }}/{{ run_date }}"
       delegate_to: localhost
-      run_once: true     # <--- 전체 호스트 통틀어 1회만 실행 (폴더 중복 생성 시도 방지)
+      run_once: true
       changed_when: false
 
-    # <--- [수정] NAS 날짜 폴더 내부로 scp 전송
+    # NAS 날짜 폴더 내부로 scp 전송
     - name: Synology NAS 지정 경로로 파일 자동 전송
       ansible.builtin.shell: |
         sshpass -p '{{ nas_pw }}' scp -O -P 22 \
@@ -125,12 +137,53 @@
       retries: 3
       delay: 2
       register: scp_result
+      ignore_errors: true
 
-    - name: NAS 전송 로그 확인
-      ansible.builtin.debug:
-        msg:
-          - "STDOUT: {{ scp_result.stdout }}"
-          - "STDERR: {{ scp_result.stderr }}"
-          - "Return Code: {{ scp_result.rc }}"
+    - name: 장비별 백업/전송 결과 정보 바인딩
+      ansible.builtin.set_fact:
+        backup_info:
+          name: "{{ inventory_hostname }}"
+          status: "{{ '성공' if (scp_result is succeeded) else '실패' }}"
+          file_name: "{{ inventory_hostname }}_{{ run_timestamp }}.cfg"
+
+    # [추가] 전체 작업 완료 후 메일 발송
+    - name: 각 장비별 백업 결과 데이터 집계 (Localhost)
+      ansible.builtin.set_fact:
+        all_backup_results: >-
+          {%- set results = [] -%}
+          {%- for host in groups['all'] -%}
+            {%- set bvar = hostvars[host].backup_info | default(none) -%}
+            {%- if bvar is mapping -%}
+              {%- set _ = results.append(bvar) -%}
+            {%- else -%}
+              {%- set _ = results.append({'name': host, 'status': '실패', 'file_name': 'N/A'}) -%}
+            {%- endif -%}
+          {%- for_end -%}
+          {{ results }}
       delegate_to: localhost
+      run_once: true
 
+    - name: 백업 완료 및 Synology NAS 전송 알림 메일 발송 (Localhost)
+      community.general.mail:
+        host: "{{ mail_host }}"
+        port: "{{ mail_port }}"
+        subject: "[백업완료] {{ run_date }} 포항캠퍼스 네트워크 장비 설정 백업 및 NAS 전송 결과"
+        body: |
+          안녕하세요. AWX 자동화 시스템입니다.
+
+          포항캠퍼스 네트워크 장비 설정(Running-Config) 백업 및 Synology NAS 전송 작업이 완료되었습니다.
+
+          ■ 백업 일시: {{ hostvars[groups['all'][0]].run_time_full | default(run_date) }} (KST)
+          ■ NAS 백업 저장 경로: {{ nas_ip }}:{{ nas_backup_path }}/{{ run_date }}/
+          ■ 총 백업 대상: {{ all_backup_results | length }} 대
+
+          [장비별 백업 및 NAS 전송 세부 내역]
+          {% for item in all_backup_results %}
+          - {{ item.name }}: {{ item.status }} (파일명: {{ item.file_name }})
+          {% endfor %}
+
+          감사합니다.
+        from: "{{ mail_from }}"
+        to: "{{ mail_to }}"
+      delegate_to: localhost
+      run_once: true
