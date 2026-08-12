@@ -47,12 +47,13 @@
             table-layout: fixed;
         }
 
+        /* 모든 셀의 가로/세로 가운데 정렬 적용 */
         th, td { 
             border: 1px solid #cbd5e0; 
             padding: 8px 5px; 
-            text-align: center; 
+            text-align: center !important; 
+            vertical-align: middle !important;
             word-break: break-all;
-            vertical-align: middle;
         }
 
         th { 
@@ -66,7 +67,7 @@
         }
 
         /* 컬럼별 폭 지정 (합계 100%) */
-        .col-devname { width: 28%; text-align: left; padding-left: 6px; font-size: 8.5pt; }
+        .col-devname { width: 28%; font-size: 8.5pt; }
         .col-ip      { width: 18%; font-size: 8.5pt; }
         .col-power   { width: 12%; }
         .col-cpu     { width: 12%; }
