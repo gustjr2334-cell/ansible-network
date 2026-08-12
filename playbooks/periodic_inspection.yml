@@ -3,15 +3,7 @@
   hosts: all
   gather_facts: false
   vars:
-    ansible_connection: network_cli
-    ansible_network_os: cisco.ios.ios
-
-    # 구형 시스코 장비용 SSH KEX / HostKey / Cipher 암호화 허용 옵션 확장
-    ansible_ssh_extra_args: >-
-      -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256
-      -o HostKeyAlgorithms=+ssh-rsa,ssh-dss
-      -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc,aes128-ctr,aes192-ctr,aes256-ctr
-
+    # SSH 접속 모듈 및 암호화 설정은 기존 인벤토리(Group Vars) 설정을 따르도록 제거
     ansible_become: true
     ansible_become_method: enable
 
@@ -30,7 +22,7 @@
       register: check_common
       ignore_errors: true
 
-    # 2. VRRP 및 L2 이중화 명령어 실행 (show vrrp brief 적용)
+    # 2. VRRP 및 L2 이중화 명령어 실행
     - name: VRRP 및 이중화 명령어 실행
       cisco.ios.ios_command:
         commands:
@@ -51,7 +43,7 @@
         dev_vrrp: "{{ check_redundancy.stdout[0] if (check_redundancy.stdout is defined and check_redundancy.stdout | length > 0) else '' }}"
         dev_eth: "{{ check_redundancy.stdout[1] if (check_redundancy.stdout is defined and check_redundancy.stdout | length > 1) else '' }}"
 
-    # 4. 장비별 상태 및 VRRP State (Master/Backup/Init) 종합 평가
+    # 4. 장비별 상태 및 VRRP State 종합 평가
     - name: 장비별 종합 점검 결과 요약 구조체 생성
       ansible.builtin.set_fact:
         device_status:
