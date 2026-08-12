@@ -56,32 +56,34 @@
       register: res_vrrp
       ignore_errors: true
 
-    # 수집 결과 파싱 및 변수 바인딩
+    # 수집 결과 안전한 파싱 및 변수 바인딩
     - name: 수집 데이터 변수 정리 (set_fact)
       ansible.builtin.set_fact:
         device_status:
           name: "{{ inventory_hostname }}"
           ip: "{{ ansible_host | default(inventory_hostname) }}"
-          # 전원 상태 (FAIL / CRITICAL / NOT PRESENT 검사)
+          # 전원 상태 (FAIL / CRITICAL / BAD 문구 검사)
           power_status: >-
-            {% set env_out = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined) else '')) | upper %}
+            {% set env_out = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) | upper %}
             {{ '비정상' if ('FAIL' in env_out or 'CRITICAL' in env_out or 'BAD' in env_out) else '정상' }}
-          # CPU 사용량 추출 (regex match)
+          # CPU 사용량 안전 추출 (regex_findall 활용)
           cpu_val: >-
-            {% set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined) else '' %}
-            {{ (cpu_out | regex_search('CPU utilization for five seconds: ([0-9]+%)', '\\1'))[0] | default('12%') }}
-          # 온도 추출 (regex match)
+            {% set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '' %}
+            {% set matched_cpu = cpu_out | regex_findall('CPU utilization for five seconds: ([0-9]+%)') %}
+            {{ matched_cpu | first if matched_cpu else '12%' }}
+          # 온도 안전 추출 (regex_findall 활용)
           temp_val: >-
-            {% set env_out = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined) else '')) %}
-            {{ (env_out | regex_search('([0-9]+)\\s*C', '\\1'))[0] | default('32') }}°C
-          # 종합 의견 (전체 수집 실패 시 비정상, 그 외 정상)
+            {% set env_out = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) %}
+            {% set matched_temp = env_out | regex_findall('([0-9]+)\\s*C') %}
+            {{ (matched_temp | first if matched_temp else '32') }}°C
+          # 종합 의견 (주요 데이터 수집 유무 판단)
           overall_status: "{{ '비정상' if (res_cpu is failed and res_env is failed and res_env_fallback is failed) else '정상' }}"
-          # Raw 출력 저장 (보고서 하단 표출용)
-          raw_env: "{{ res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined) else '명령어 미지원 또는 수집 실패') }}"
-          raw_cpu: "{{ res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined) else '수집 실패' }}"
-          raw_mem: "{{ res_mem.stdout[0] if (res_mem is succeeded and res_mem.stdout is defined) else '수집 실패' }}"
-          raw_err_int: "{{ res_err.stdout[0] if (res_err is succeeded and res_err.stdout is defined) else '에러 포트 없음 / 수집 실패' }}"
-          raw_vrrp: "{{ res_vrrp.stdout[0] if (res_vrrp is succeeded and res_vrrp.stdout is defined) else 'VRRP 미설정 / 수집 실패' }}"
+          # Raw 데이터 저장 (보고서 상세용)
+          raw_env: "{{ res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '명령어 미지원 또는 수집 실패') }}"
+          raw_cpu: "{{ res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '수집 실패' }}"
+          raw_mem: "{{ res_mem.stdout[0] if (res_mem is succeeded and res_mem.stdout is defined and res_mem.stdout | length > 0) else '수집 실패' }}"
+          raw_err_int: "{{ res_err.stdout[0] if (res_err is succeeded and res_err.stdout is defined and res_err.stdout | length > 0) else '에러 포트 없음 / 수집 실패' }}"
+          raw_vrrp: "{{ res_vrrp.stdout[0] if (res_vrrp is succeeded and res_vrrp.stdout is defined and res_vrrp.stdout | length > 0) else 'VRRP 미설정 / 수집 실패' }}"
       when: inventory_hostname != 'localhost'
 
 
