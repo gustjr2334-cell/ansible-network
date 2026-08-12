@@ -1,47 +1,64 @@
 ---
-- name: "[Step 1] 장비 상태 수집 및 이상 판정"
+- name: "[Step 1] 네트워크 장비 정밀 종합 점검"
   hosts: all
   gather_facts: false
   vars:
-    cpu_threshold: 80
-    mem_threshold: 85
+    ansible_connection: network_cli
+    ansible_network_os: cisco.ios.ios
+    ansible_ssh_extra_args: "-o KexAlgorithms=+diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa"
 
   tasks:
-    # 1. 장비 리소스 정보 수집
-    - name: 장비 리소스 상태 수집
-      ansible.builtin.setup:
-        gather_subset:
-          - 'hardware'
+    - name: 주요 정기점검 CLI 명령어 일괄 실행
+      cisco.ios.ios_command:
+        commands:
+          - show version
+          - show environment all
+          - show processes cpu sort
+          - show processes memory sort
+          - show interface status err-disabled
+          - show interface count error
+          - show standby brief
+          - show etherchannel summary
+          - show spanning-tree summary
+          - show logging
+      register: check_out
+      ignore_errors: true
 
-    # 2. 수치 가공
-    - name: 사용률 계산
+    - name: 점검 결과 텍스트 데이터 파싱 및 이상 유무 판정
       ansible.builtin.set_fact:
-        parsed_cpu: "{{ (100 - (ansible_processor_idle_time | default(20))) | round(1) }}"
-        parsed_mem: "{{ ((1 - (ansible_memfree_mb / ansible_memtotal_mb)) * 100) | round(1) }}"
+        dev_ver: "{{ check_out.stdout[0] | default('') }}"
+        dev_env: "{{ check_out.stdout[1] | default('') }}"
+        dev_cpu: "{{ check_out.stdout[2] | default('') }}"
+        dev_mem: "{{ check_out.stdout[3] | default('') }}"
+        dev_err_int: "{{ check_out.stdout[4] | default('') }}"
+        dev_cnt_err: "{{ check_out.stdout[5] | default('') }}"
+        dev_hsrp: "{{ check_out.stdout[6] | default('') }}"
+        dev_eth: "{{ check_out.stdout[7] | default('') }}"
+        dev_stp: "{{ check_out.stdout[8] | default('') }}"
+        dev_log: "{{ check_out.stdout[9] | default('') }}"
 
-    # 3. 임계치 비교 후 판정
-    - name: 상태 평가
+    - name: 장비별 종합 점검 결과 요약 구조체 생성
       ansible.builtin.set_fact:
         device_status:
           name: "{{ inventory_hostname }}"
           ip: "{{ ansible_host | default(inventory_hostname) }}"
-          cpu_usage: "{{ parsed_cpu }}"
-          mem_usage: "{{ parsed_mem }}"
-          status: "{{ '점검필요' if (parsed_cpu | float > cpu_threshold or parsed_mem | float > mem_threshold) else '양호' }}"
-          details: >-
-            {% if parsed_cpu | float > cpu_threshold and parsed_mem | float > mem_threshold %}CPU/메모리 임계치 초과
-            {% elif parsed_cpu | float > cpu_threshold %}CPU 임계치 초과
-            {% elif parsed_mem | float > mem_threshold %}메모리 임계치 초과
-            {% else %}특이사항 없음{% endif %}
+          env_status: "{{ '점검필요' if ('FAIL' in dev_env or 'Faulty' in dev_env) else '정상' }}"
+          err_int_status: "{{ '에러포트존재' if (dev_err_int | regex_search('(Gi|Fa|Te|Two|Fo|Ten)[0-9/]+')) else '정상' }}"
+          eth_status: "{{ '점검필요' if ('(D)' in dev_eth or '(s)' in dev_eth) else '정상' }}"
+          hsrp_status: "{{ '점검필요' if ('Init' in dev_hsrp) else '정상' }}"
+          raw_env: "{{ dev_env }}"
+          raw_cpu: "{{ dev_cpu.splitlines()[:5] | join('\n') }}"
+          raw_mem: "{{ dev_mem.splitlines()[:5] | join('\n') }}"
+          raw_err_int: "{{ dev_err_int }}"
+          raw_cnt_err: "{{ dev_cnt_err }}"
 
-    # 4. AWX 컨트롤러(localhost)로 집계
-    - name: 결과 데이터 취합
+    - name: AWX 컨트롤러(localhost)로 전 장비 데이터 집계
       ansible.builtin.set_fact:
         all_results: "{{ ansible_play_hosts | map('extract', hostvars, 'device_status') | list }}"
       run_once: true
       delegate_to: localhost
 
-- name: "[Step 2] PDF 생성 및 메일 발송"
+- name: "[Step 2] PDF 보고서 생성 및 메일 발송"
   hosts: localhost
   gather_facts: false
   vars:
@@ -64,8 +81,8 @@
       community.general.mail:
         host: "{{ mail_host }}"
         port: "{{ mail_port }}"
-        subject: "[정기점검] {{ lookup('pipe', 'date +%Y-%m-%d') }} 인프라 장비 정기점검 보고서"
-        body: "안녕하세요. 자동화 시스템에서 생성된 정기점검 PDF 보고서를 첨부합니다."
+        subject: "[정기점검] {{ lookup('pipe', 'date +%Y-%m-%d') }} 인프라 네트워크 장비 정밀 점검 보고서"
+        body: "안녕하세요. AWX 자동화 시스템에서 생성된 네트워크 장비 종합 점검 보고서를 첨부합니다."
         from: "{{ mail_from }}"
         to: "{{ mail_to }}"
         attach:
