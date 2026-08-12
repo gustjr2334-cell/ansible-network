@@ -47,6 +47,7 @@
             table-layout: fixed;
         }
 
+        /* 모든 셀 가로/세로 가운데 정렬 */
         th, td { 
             border: 1px solid #cbd5e0; 
             padding: 8px 5px; 
@@ -83,6 +84,15 @@
             white-space: pre-wrap; 
             word-break: break-all; 
         }
+
+        .no-issue {
+            padding: 15px;
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            color: #4a5568;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -112,7 +122,7 @@
       {% endif %}
     {% endfor %}
 
-    <h1>인프라 네트워크 장비 정밀 점검 보고서</h1>
+    <h1>포항캠퍼스 Infra 일일 점검 보고서</h1>
     
     <div class="meta-info">
         <div><strong>점검 일시:</strong> {{ report_time | default(now(fmt='%Y-%m-%d %H:%M:%S')) }} (KST)</div>
@@ -155,26 +165,33 @@
         </tbody>
     </table>
 
-    <h2>2. 장비별 상세 수집 데이터</h2>
-    {% for item in ns.results %}
-    <h3>[{{ item.name }}] - {{ item.ip }}</h3>
-    
-    <h4>[환경 및 상태 (Environment)]</h4>
-    <pre>{{ item.raw_env }}</pre>
+    <h2>2. 장애 및 비정상 장비 상세 수집 데이터</h2>
+    {% set fail_items = ns.results | selectattr('overall_status', 'ne', '정상') | list %}
+    {% if fail_items | length > 0 %}
+        {% for item in fail_items %}
+        <h3>[{{ item.name }}] - {{ item.ip }} <span class="status-fail">({{ item.overall_status }})</span></h3>
+        
+        <h4>[환경 및 상태 (Environment)]</h4>
+        <pre>{{ item.raw_env }}</pre>
 
-    <h4>[CPU 사용량 Top 5]</h4>
-    <pre>{{ item.raw_cpu }}</pre>
+        <h4>[CPU 사용량 Top 5]</h4>
+        <pre>{{ item.raw_cpu }}</pre>
 
-    <h4>[메모리 사용량 Top 5]</h4>
-    <pre>{{ item.raw_mem }}</pre>
+        <h4>[메모리 사용량 Top 5]</h4>
+        <pre>{{ item.raw_mem }}</pre>
 
-    <h4>[에러 포트 및 인터페이스 상태]</h4>
-    <pre>{{ item.raw_err_int }}</pre>
+        <h4>[에러 포트 및 인터페이스 상태]</h4>
+        <pre>{{ item.raw_err_int }}</pre>
 
-    <h4>[VRRP 상태 요약]</h4>
-    <pre>{{ item.raw_vrrp }}</pre>
-    <hr style="border: 0; border-top: 1px dashed #cbd5e0; margin: 30px 0;">
-    {% endfor %}
+        <h4>[VRRP 상태 요약]</h4>
+        <pre>{{ item.raw_vrrp }}</pre>
+        <hr style="border: 0; border-top: 1px dashed #cbd5e0; margin: 30px 0;">
+        {% endfor %}
+    {% else %}
+        <div class="no-issue">
+            ✔ 특이사항 없음: 모든 점검 대상 장비가 정상 상태로 작동 중입니다.
+        </div>
+    {% endif %}
 
 </body>
 </html>
