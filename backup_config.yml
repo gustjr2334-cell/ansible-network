@@ -23,7 +23,7 @@
     - name: 실행 시점 타임스탬프 및 날짜 변수 생성
       set_fact:
         run_timestamp: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
-        run_date: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"   # 날짜 폴더용 변수 (예: 2026-08-12)
+        run_date: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"
         run_time_full: "{{ lookup('pipe', 'date \"+%Y-%m-%d %H:%M:%S\"') }}"
       delegate_to: localhost
       run_once: true
@@ -139,7 +139,15 @@
       register: scp_result
       ignore_errors: true
 
-- name: 장비별 백업/전송 결과 정보 바인딩
+    - name: NAS 전송 로그 확인
+      ansible.builtin.debug:
+        msg:
+          - "STDOUT: {{ scp_result.stdout }}"
+          - "STDERR: {{ scp_result.stderr }}"
+          - "Return Code: {{ scp_result.rc }}"
+      delegate_to: localhost
+
+    - name: 장비별 백업/전송 결과 정보 바인딩
       ansible.builtin.set_fact:
         backup_info:
           name: "{{ inventory_hostname }}"
