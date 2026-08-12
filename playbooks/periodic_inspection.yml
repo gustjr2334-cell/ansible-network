@@ -3,9 +3,18 @@
   hosts: all
   gather_facts: false
   vars:
-    # SSH 접속 모듈 및 암호화 설정은 기존 인벤토리(Group Vars) 설정을 따르도록 제거
+    # 시스코 CLI 모듈 필수 접속 방식
+    ansible_connection: network_cli
+    ansible_network_os: cisco.ios.ios
+
+    # Enable 모드(#) 진입 설정
     ansible_become: true
     ansible_become_method: enable
+
+    # AWX Paramiko SSH 엔진용 구형 장비 KEX / Cipher 암호화 허용 옵션
+    ansible_paramiko_kex_algorithms: "diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256"
+    ansible_paramiko_ciphers: "aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc,aes128-ctr,aes192-ctr,aes256-ctr"
+    ansible_paramiko_host_key_auto_add: true
 
   tasks:
     # 1. 전 장비 공통 명령어 실행
