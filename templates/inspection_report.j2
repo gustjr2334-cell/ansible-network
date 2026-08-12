@@ -66,12 +66,12 @@
         }
 
         /* 컬럼별 폭 지정 (합계 100%) */
-        .col-devname { width: 31%; text-align: left; padding-left: 6px; font-size: 8.5pt; }
-        .col-ip      { width: 19%; font-size: 8.5pt; }
+        .col-devname { width: 28%; text-align: left; padding-left: 6px; font-size: 8.5pt; }
+        .col-ip      { width: 18%; font-size: 8.5pt; }
         .col-power   { width: 12%; }
         .col-cpu     { width: 12%; }
         .col-temp    { width: 12%; }
-        .col-opinion { width: 14%; }
+        .col-opinion { width: 18%; }
 
         /* 정상: 초록색 Bold / 비정상: 빨간색 Bold */
         .status-ok   { color: #2e7d32 !important; font-weight: bold !important; }
@@ -102,7 +102,7 @@
             'power_status': '비정상',
             'cpu_val': 'N/A',
             'temp_val': 'N/A',
-            'overall_status': '비정상',
+            'overall_status': '비정상(수집실패)',
             'raw_env': '수집실패(접속오류)',
             'raw_cpu': '수집실패(접속오류)',
             'raw_mem': '수집실패(접속오류)',
@@ -134,9 +134,8 @@
         </thead>
         <tbody>
             {% for item in ns.results %}
-            {% set p_ok = item.power_status in ['정상', 'OK', 'Normal'] %}
-            {% set o_ok = item.overall_status in ['정상', 'OK', 'Normal'] %}
-            {% set is_final_ok = p_ok and o_ok %}
+            {% set p_ok = (item.power_status in ['정상', 'OK', 'Normal']) %}
+            {% set o_ok = (item.overall_status == '정상') %}
             <tr>
                 <td class="col-devname">{{ item.name }}</td>
                 <td class="col-ip">{{ item.ip }}</td>
@@ -149,8 +148,8 @@
                 <td class="col-temp">
                     {{ item.temp_val | default('N/A') }}
                 </td>
-                <td class="col-opinion {% if is_final_ok %}status-ok{% else %}status-fail{% endif %}">
-                    {% if is_final_ok %}정상{% else %}비정상{% endif %}
+                <td class="col-opinion {% if o_ok %}status-ok{% else %}status-fail{% endif %}">
+                    {{ item.overall_status }}
                 </td>
             </tr>
             {% endfor %}
