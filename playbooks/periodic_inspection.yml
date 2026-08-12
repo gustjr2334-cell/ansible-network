@@ -56,8 +56,8 @@
       register: res_vrrp
       ignore_errors: true
 
-# 수집 데이터 변수 정리 (set_fact)
-    - name: 수집 데이터 변수 정리 (set_fact)
+    # 6. 중간 변수 수집 (1단계: 전원, CPU, 온도 파싱)
+    - name: 수집 항목별 상태값 변수 생성
       ansible.builtin.set_fact:
         p_status: >-
           {%- set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) -%}
@@ -82,7 +82,8 @@
           {%- endif -%}
       when: inventory_hostname != 'localhost'
 
-    - name: 항목별 비정상 여부 파악 및 종합의견(overall_status) 계산
+    # 7. 종합 변수 결합 (2단계: 형변환 안전성 보장 및 종합의견 수립)
+    - name: 종합의견(overall_status) 계산 및 최종 데이터 구조 바인딩
       ansible.builtin.set_fact:
         device_status:
           name: "{{ inventory_hostname }}"
@@ -96,7 +97,6 @@
             {%- set c_is_fail = (cpu_int >= 80 or res_cpu is failed) -%}
             {%- set temp_int = (t_status | regex_replace('[^0-9]', '')) | int(default=0) -%}
             {%- set t_is_fail = (temp_int >= 60) -%}
-            
             {%- if not p_is_fail and not c_is_fail and not t_is_fail -%}
               정상
             {%- else -%}
@@ -113,41 +113,17 @@
           raw_vrrp: "{{ (res_vrrp.stdout[0] if (res_vrrp is succeeded and res_vrrp.stdout is defined and res_vrrp.stdout | length > 0) else 'VRRP 미설정 / 수집 실패') }}"
       when: inventory_hostname != 'localhost'
 
-    - name: 종합의견(overall_status) 계산 및 바인딩
-      ansible.builtin.set_fact:
-        device_status: "{{ device_status | combine({'overall_status': calc_overall}) }}"
-      vars:
-        p_fail: "{{ device_status.power_status != '정상' }}"
-        c_num: "{{ device_status.cpu_val | regex_replace('[^0-9]', '') | default('0') | int }}"
-        c_fail: "{{ c_num >= 80 or res_cpu is failed }}"
-        t_num: "{{ device_status.temp_val | regex_replace('[^0-9]', '') | default('0') | int }}"
-        t_fail: "{{ t_num >= 60 }}"
-        reasons: >-
-          {%- set r = [] -%}
-          {%- if p_fail -%}{%- set _ = r.append('전원') -%}{%- endif -%}
-          {%- if c_fail -%}{%- set _ = r.append('CPU') -%}{%- endif -%}
-          {%- if t_fail -%}{%- set _ = r.append('온도') -%}{%- endif -%}
-          {{ r }}
-        calc_overall: >-
-          {%- if (reasons | from_yaml | length) == 0 -%}
-            정상
-          {%- else -%}
-            비정상({{ (reasons | from_yaml) | join(', ') }})
-          {%- endif -%}
-      when: inventory_hostname != 'localhost'
-
 
 - name: "[Step 2] PDF 보고서 생성 및 메일 발송"
   hosts: localhost
   gather_facts: false
   vars:
-    mail_host: "smtp.company.com"         # 사내 SMTP 서버 주소
-    mail_port: 25                         # SMTP 포트
-    mail_from: "awx-report@company.com"   # 발신자 주소
-    mail_to: "admin@company.com"          # 수신자 주소
+    mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
+    mail_port: 25                     # SMTP 포트
+    mail_from: "jhs@ecopro.co.kr" # 보낼 사람 이메일
+    mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
 
   tasks:
-    # Python을 직접 호출하여 UTC+9 시간 추출
     - name: KST 날짜 및 시간 정보 추출
       ansible.builtin.command:
         cmd: python3 -c "from datetime import datetime, timezone, timedelta; kst = datetime.now(timezone(timedelta(hours=9))); print(kst.strftime('%Y-%m-%d')); print(kst.strftime('%Y-%m-%d %H:%M:%S'))"
