@@ -124,6 +124,7 @@
     mail_to:                            # 지정 수신자
       - "jhs@ecopro.co.kr"
       - "tgkim11@ecopropn.com"
+      - "jukim2@ecopro.com"
 
   tasks:
     - name: KST 날짜 및 시간 정보 추출
