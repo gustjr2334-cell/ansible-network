@@ -47,7 +47,6 @@
             table-layout: fixed;
         }
 
-        /* 모든 셀의 가로/세로 가운데 정렬 적용 */
         th, td { 
             border: 1px solid #cbd5e0; 
             padding: 8px 5px; 
@@ -66,7 +65,6 @@
             background-color: #f7fafc; 
         }
 
-        /* 컬럼별 폭 지정 (합계 100%) */
         .col-devname { width: 28%; font-size: 8.5pt; }
         .col-ip      { width: 18%; font-size: 8.5pt; }
         .col-power   { width: 12%; }
@@ -74,7 +72,6 @@
         .col-temp    { width: 12%; }
         .col-opinion { width: 18%; }
 
-        /* 정상: 초록색 Bold / 비정상: 빨간색 Bold */
         .status-ok   { color: #2e7d32 !important; font-weight: bold !important; }
         .status-fail { color: #d32f2f !important; font-weight: bold !important; }
 
@@ -94,8 +91,9 @@
     {% for host in groups['all'] %}
       {% if host != 'localhost' %}
         {% set ns.target_count = ns.target_count + 1 %}
-        {% if hostvars[host].device_status is defined %}
-          {% set ns.results = ns.results + [hostvars[host].device_status] %}
+        {% set hvar = hostvars[host].device_status | default(none) %}
+        {% if hvar is mapping %}
+          {% set ns.results = ns.results + [hvar] %}
         {% else %}
           {% set ns.results = ns.results + [{
             'name': host,
