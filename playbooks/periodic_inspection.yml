@@ -21,6 +21,7 @@
     - name: 공통 기본 상태 명령어 실행
       cisco.ios.ios_command:
         commands:
+          - terminal no monitor
           - show version
           - show environment all
           - show processes cpu sort
