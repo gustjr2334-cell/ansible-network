@@ -77,10 +77,10 @@
   hosts: localhost
   gather_facts: false
   vars:
-    mail_host: "smtp.company.com"         # 사내 SMTP 서버 주소
-    mail_port: 25                         # SMTP 포트
-    mail_from: "awx-report@company.com"   # 발신자 주소
-    mail_to: "admin@company.com"          # 수신자 주소
+    mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
+    mail_port: 25                     # SMTP 포트
+    mail_from: "jhs@ecopro.co.kr" # 보낼 사람 이메일
+    mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
 
   tasks:
     - name: Jinja2 HTML 보고서 생성
