@@ -77,37 +77,43 @@
   hosts: localhost
   gather_facts: false
   vars:
-    mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
-    mail_port: 25                     # SMTP 포트
-    mail_from: "jhs@ecopro.co.kr" # 보낼 사람 이메일
-    mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
+    mail_host: "smtp.company.com"         # 사내 SMTP 서버 주소
+    mail_port: 25                         # SMTP 포트
+    mail_from: "awx-report@company.com"   # 발신자 주소
+    mail_to: "admin@company.com"          # 수신자 주소
 
   tasks:
-    # 한글 폰트 자동 다운로드 (PDF 글자 깨짐 방지)
-    - name: 나눔고딕 한글 폰트 다운로드
-      ansible.builtin.get_url:
-        url: "https://github.com/google/fonts/raw/main/ofl/nanumgothic/NanumGothic-Regular.ttf"
-        dest: "/tmp/NanumGothic.ttf"
-        mode: '0644'
-      ignore_errors: true
-
     - name: Jinja2 HTML 보고서 생성
       ansible.builtin.template:
         src: ../templates/inspection_report.j2
         dest: /tmp/inspection_report.html
 
-    - name: xhtml2pdf 파이썬 패키지 확인 및 설치
+    - name: xhtml2pdf 및 reportlab 파이썬 패키지 확인
       ansible.builtin.pip:
-        name: xhtml2pdf
+        name:
+          - xhtml2pdf
+          - reportlab
         state: present
       ignore_errors: true
 
-    - name: HTML을 PDF로 변환 (한글 폰트 적용)
+    - name: HTML을 PDF로 변환 (저장소 폰트 레지스트리 강제 등록)
       ansible.builtin.shell: |
         python3 -c "
+        import os
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
         from xhtml2pdf import pisa
+
+        # Git 저장소 내 폰트 파일 경로 지정
+        font_path = os.path.abspath('files/NanumGothic.ttf')
+        
+        # ReportLab 엔진에 한글 폰트 명시적 등록
+        if os.path.exists(font_path):
+            pdfmetrics.registerFont(TTFont('NanumGothic', font_path))
+
         with open('/tmp/inspection_report.html', 'r', encoding='utf-8') as html_file:
             html_content = html_file.read()
+
         with open('/tmp/Periodic_Inspection_Report.pdf', 'wb') as pdf_file:
             pisa.CreatePDF(html_content, dest=pdf_file)
         "
