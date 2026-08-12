@@ -4,43 +4,99 @@
     <meta charset="UTF-8">
     <title>네트워크 장비 정밀 점검 보고서</title>
     <style>
-        /* 저장소 폰트 파일명(NanumGothic-Regular.ttf) 명시 */
+        /* 저장소 폰트 파일(NanumGothic-Regular.ttf) 연결 */
         @font-face {
             font-family: 'NanumGothic';
             src: url('/tmp/NanumGothic-Regular.ttf');
         }
 
-        /* 전체 HTML 요소에 NanumGothic 적용 */
+        /* 전체 요소 폰트 설정 */
         html, body, table, td, th, h1, h2, h3, h4, p, span, pre, div { 
             font-family: 'NanumGothic', sans-serif !important; 
         }
 
-        body { margin: 20px; color: #333; }
-        h1 { color: #1a365d; border-bottom: 2px solid #2b6cb0; padding-bottom: 10px; }
-        h2 { color: #2c5282; margin-top: 30px; }
-        .meta-info { margin-bottom: 20px; font-size: 0.9em; color: #4a5568; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.85em; }
-        th, td { border: 1px solid #cbd5e0; padding: 8px 10px; text-align: left; }
-        th { background-color: #ebf8ff; color: #2c5282; font-weight: bold; }
-        tr:nth-child(even) { background-color: #f7fafc; }
-        .status-ok { color: #2b6cb0; font-weight: bold; }
+        body { 
+            margin: 20px; 
+            color: #333; 
+            font-size: 10pt;
+        }
+
+        h1 { 
+            color: #1a365d; 
+            border-bottom: 2px solid #2b6cb0; 
+            padding-bottom: 8px; 
+            font-size: 16pt;
+        }
+
+        h2 { 
+            color: #2c5282; 
+            margin-top: 25px; 
+            font-size: 13pt;
+        }
+
+        .meta-info { 
+            margin-bottom: 20px; 
+            font-size: 0.95em; 
+            color: #4a5568; 
+            line-height: 1.6;
+        }
+
+        /* 테이블 레이아웃 자동 조절 및 컬럼 폭 고정 */
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
+            font-size: 0.85em; 
+            table-layout: fixed;
+        }
+
+        th, td { 
+            border: 1px solid #cbd5e0; 
+            padding: 8px 6px; 
+            text-align: center; 
+            word-break: break-all; /* 긴 장비명이 칸을 넘치지 않게 자동 줄바꿈 */
+            vertical-align: middle;
+        }
+
+        th { 
+            background-color: #ebf8ff; 
+            color: #2c5282; 
+            font-weight: bold; 
+        }
+
+        tr:nth-child(even) { 
+            background-color: #f7fafc; 
+        }
+
+        /* 컬럼별 폭 지정 (총 100%) */
+        .col-devname { width: 34%; text-align: left; padding-left: 8px; font-size: 0.8em; } /* 장비명 너비 확보 */
+        .col-ip      { width: 20%; }
+        .col-env     { width: 15%; }
+        .col-err     { width: 15%; }
+        .col-vrrp    { width: 16%; }
+
+        /* 상태 색상 */
+        .status-ok   { color: #2b6cb0; font-weight: bold; }
         .status-warn { color: #dd6b20; font-weight: bold; }
         .status-fail { color: #e53e3e; font-weight: bold; }
-        pre { background-color: #edf2f7; padding: 10px; border-radius: 4px; font-size: 0.8em; white-space: pre-wrap; word-break: break-all; }
+
+        pre { 
+            background-color: #edf2f7; 
+            padding: 10px; 
+            border-radius: 4px; 
+            font-size: 0.8em; 
+            white-space: pre-wrap; 
+            word-break: break-all; 
+        }
     </style>
 </head>
 <body>
 
-    <h1>네트워크 장비 정밀 점검 보고서</h1>
-    <div class="meta-info">
-        <p><strong>점검 일시:</strong> {{ now(fmt='%Y-%m-%d %H:%M:%S') }}</p>
-        <p><strong>점검 대상 장비 수:</strong> {{ ansible_play_hosts_all | length }} 대</p>
-    </div>
-
-   <!-- 변수 수집 처리 (groups['all'] 참조 및 localhost 제외) -->
-    {% set ns = namespace(results=[]) %}
+    <!-- 데이터 미리 집계 (localhost 제외 및 실제 장비 대수 계산) -->
+    {% set ns = namespace(results=[], target_count=0) %}
     {% for host in groups['all'] %}
       {% if host != 'localhost' %}
+        {% set ns.target_count = ns.target_count + 1 %}
         {% if hostvars[host].device_status is defined %}
           {% set ns.results = ns.results + [hostvars[host].device_status] %}
         {% else %}
@@ -49,7 +105,6 @@
             'ip': hostvars[host].ansible_host | default(host),
             'env_status': '접속실패',
             'err_int_status': '접속실패',
-            'eth_status': '접속실패',
             'vrrp_status': '접속실패',
             'raw_env': '수집실패(접속오류)',
             'raw_cpu': '수집실패(접속오류)',
@@ -61,51 +116,62 @@
       {% endif %}
     {% endfor %}
 
+    <h1>인프라 네트워크 장비 정밀 점검 보고서</h1>
+    
+    <div class="meta-info">
+        <div><strong>점검 일시:</strong> {{ now(fmt='%Y-%m-%d %H:%M:%S') }}</div>
+        <div><strong>점검 대상 장비 수:</strong> {{ ns.target_count }} 대</div>
+    </div>
+
     <h2>1. 전 장비 종합 점검 요약</h2>
     <table>
         <thead>
             <tr>
-                <th>장비명</th>
-                <th>IP 주소</th>
-                <th>환경/전원</th>
-                <th>에러 포트</th>
-                <th>EtherChannel</th>
-                <th>VRRP 상태</th>
+                <th class="col-devname">장비명</th>
+                <th class="col-ip">IP 주소</th>
+                <th class="col-env">환경/전원</th>
+                <th class="col-err">에러 포트</th>
+                <th class="col-vrrp">VRRP 상태</th>
             </tr>
         </thead>
         <tbody>
-            {% for dev in ns.results %}
+            {% for item in ns.results %}
             <tr>
-                <td><strong>{{ dev.name }}</strong></td>
-                <td>{{ dev.ip }}</td>
-                <td class="{{ 'status-fail' if dev.env_status in ['점검필요','접속실패'] else 'status-ok' }}">{{ dev.env_status }}</td>
-                <td class="{{ 'status-warn' if dev.err_int_status == '에러포트존재' else ('status-fail' if dev.err_int_status == '접속실패' else 'status-ok') }}">{{ dev.err_int_status }}</td>
-                <td class="{{ 'status-warn' if dev.eth_status == '점검필요' else ('status-fail' if dev.eth_status == '접속실패' else 'status-ok') }}">{{ dev.eth_status }}</td>
-                <td class="{{ 'status-warn' if dev.vrrp_status in ['Init/비정상'] else ('status-fail' if dev.vrrp_status == '접속실패' else 'status-ok') }}">{{ dev.vrrp_status }}</td>
+                <td class="col-devname">{{ item.name }}</td>
+                <td class="col-ip">{{ item.ip }}</td>
+                <td class="col-env {% if item.env_status == '정상' %}status-ok{% else %}status-fail{% endif %}">
+                    {{ item.env_status }}
+                </td>
+                <td class="col-err {% if item.err_int_status == '정상' %}status-ok{% else %}status-fail{% endif %}">
+                    {{ item.err_int_status }}
+                </td>
+                <td class="col-vrrp {% if item.vrrp_status in ['Master', 'Backup', '정상'] %}status-ok{% else %}status-warn{% endif %}">
+                    {{ item.vrrp_status }}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
     <h2>2. 장비별 상세 수집 데이터</h2>
-    {% for dev in ns.results %}
-    <h3>[{{ dev.name }}] - {{ dev.ip }}</h3>
+    {% for item in ns.results %}
+    <h3>[{{ item.name }}] - {{ item.ip }}</h3>
     
     <h4>[환경 및 상태 (Environment)]</h4>
-    <pre>{{ dev.raw_env }}</pre>
+    <pre>{{ item.raw_env }}</pre>
 
     <h4>[CPU 사용량 Top 5]</h4>
-    <pre>{{ dev.raw_cpu }}</pre>
+    <pre>{{ item.raw_cpu }}</pre>
 
     <h4>[메모리 사용량 Top 5]</h4>
-    <pre>{{ dev.raw_mem }}</pre>
+    <pre>{{ item.raw_mem }}</pre>
 
     <h4>[에러 포트 및 인터페이스 상태]</h4>
-    <pre>{{ dev.raw_err_int }}</pre>
+    <pre>{{ item.raw_err_int }}</pre>
 
     <h4>[VRRP 상태 요약]</h4>
-    <pre>{{ dev.raw_vrrp }}</pre>
-    <hr>
+    <pre>{{ item.raw_vrrp }}</pre>
+    <hr style="border: 0; border-top: 1px dashed #cbd5e0; margin: 30px 0;">
     {% endfor %}
 
 </body>
