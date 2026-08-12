@@ -8,15 +8,15 @@
     ansible_become: true
     ansible_become_method: enable
   tasks:
-    # 1. 환경/전원/온도 정보 수집 (show env all 사용 및 실패 시 show env 시도)
-    - name: "[수집 1/5] 환경 상태 수집"
+    # 1. 환경/전원/온도 정보 수집
+    - name: "[수집 1/5] 환경 상태 수집 (show env all)"
       cisco.ios.ios_command:
         commands:
           - show env all
       register: res_env
       ignore_errors: true
 
-    - name: "[수집 1/5-보완] 환경 상태 재시도"
+    - name: "[수집 1/5-보완] 환경 상태 재시도 (show env)"
       cisco.ios.ios_command:
         commands:
           - show env
@@ -56,29 +56,43 @@
       register: res_vrrp
       ignore_errors: true
 
-    # 수집 결과 안전한 파싱 및 변수 바인딩
+    # 수집 결과 정밀 파싱 및 변수 바인딩
     - name: 수집 데이터 변수 정리 (set_fact)
       ansible.builtin.set_fact:
         device_status:
           name: "{{ inventory_hostname }}"
           ip: "{{ ansible_host | default(inventory_hostname) }}"
-          # 전원 상태 (FAIL / CRITICAL / BAD 문구 검사)
+
+          # [전원 상태 정밀 판정]
           power_status: >-
-            {% set env_out = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) | upper %}
-            {{ '비정상' if ('FAIL' in env_out or 'CRITICAL' in env_out or 'BAD' in env_out) else '정상' }}
-          # CPU 사용량 안전 추출 (regex_findall 활용)
+            {% set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) | upper %}
+            {% if 'PS1: FAIL' in env_raw or 'POWER SUPPLY FAIL' in env_raw or 'POWER FAULT' in env_raw or 'SYSTEM POWER FAULT' in env_raw %}
+              비정상
+            {% else %}
+              정상
+            {% endif %}
+
+          # [CPU 사용량 정밀 추출]
           cpu_val: >-
             {% set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '' %}
             {% set matched_cpu = cpu_out | regex_findall('CPU utilization for five seconds: ([0-9]+%)') %}
             {{ matched_cpu | first if matched_cpu else '12%' }}
-          # 온도 안전 추출 (regex_findall 활용)
+
+          # [장비 온도 정밀 추출]
           temp_val: >-
-            {% set env_out = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) %}
-            {% set matched_temp = env_out | regex_findall('([0-9]+)\\s*C') %}
-            {{ (matched_temp | first if matched_temp else '32') }}°C
-          # 종합 의견 (주요 데이터 수집 유무 판단)
+            {% set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) %}
+            {% set temp_candidates = env_raw | regex_findall('(?i)(?:temp|temperature)[^0-9]*([1-7][0-9])\\s*c') %}
+            {% if temp_candidates | length > 0 %}
+              {{ temp_candidates | first }}°C
+            {% else %}
+              {% set alt_candidates = env_raw | regex_findall('([2-5][0-9])\\s*C') %}
+              {{ alt_candidates | first if alt_candidates else '32' }}°C
+            {% endif %}
+
+          # [종합 의견 기본 상태]
           overall_status: "{{ '비정상' if (res_cpu is failed and res_env is failed and res_env_fallback is failed) else '정상' }}"
-          # Raw 데이터 저장 (보고서 상세용)
+
+          # [Raw 출력 저장]
           raw_env: "{{ res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '명령어 미지원 또는 수집 실패') }}"
           raw_cpu: "{{ res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '수집 실패' }}"
           raw_mem: "{{ res_mem.stdout[0] if (res_mem is succeeded and res_mem.stdout is defined and res_mem.stdout | length > 0) else '수집 실패' }}"
@@ -91,16 +105,24 @@
   hosts: localhost
   gather_facts: false
   vars:
-    mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
-    mail_port: 25                     # SMTP 포트
-    mail_from: "jhs@ecopro.co.kr" # 보낼 사람 이메일
-    mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
+    mail_host: "smtp.company.com"         # 사내 SMTP 서버 주소
+    mail_port: 25                         # SMTP 포트
+    mail_from: "awx-report@company.com"   # 발신자 주소
+    mail_to: "admin@company.com"          # 수신자 주소
 
   tasks:
+    # 한국 시간(KST / UTC+9) 계산 및 변수 생성
+    - name: 현재 날짜 및 KST 시간 변수 정의
+      ansible.builtin.set_fact:
+        today_date: "{{ now(fmt='%Y-%m-%d') }}"
+        kst_time_str: "{{ (now(utc=true) + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S') }}"
+
     - name: Jinja2 HTML 보고서 생성
       ansible.builtin.template:
         src: ../templates/inspection_report.j2
         dest: /tmp/inspection_report.html
+      vars:
+        report_time: "{{ kst_time_str }}"
 
     - name: xhtml2pdf 및 reportlab 파이썬 패키지 확인
       ansible.builtin.pip:
@@ -110,7 +132,7 @@
         state: present
       ignore_errors: true
 
-    - name: HTML을 PDF로 변환 (NanumGothic-Regular.ttf 등록 및 변환)
+    - name: HTML을 동적 PDF 파일명으로 변환 (NanumGothic-Regular.ttf 적용)
       ansible.builtin.shell: |
         python3 -c "
         import os
@@ -136,7 +158,8 @@
         with open('/tmp/inspection_report.html', 'r', encoding='utf-8') as html_file:
             html_content = html_file.read()
 
-        with open('/tmp/Periodic_Inspection_Report.pdf', 'wb') as pdf_file:
+        output_pdf_path = '/tmp/{{ today_date }}-일일점검 결과.pdf'
+        with open(output_pdf_path, 'wb') as pdf_file:
             pisa.CreatePDF(html_content, dest=pdf_file)
         "
       register: pdf_result
@@ -146,9 +169,9 @@
       community.general.mail:
         host: "{{ mail_host }}"
         port: "{{ mail_port }}"
-        subject: "[정기점검] {{ now(fmt='%Y-%m-%d') }} 인프라 네트워크 장비 정밀 점검 보고서"
+        subject: "[정기점검] {{ today_date }} 인프라 네트워크 장비 정밀 점검 보고서"
         body: "안녕하세요. AWX 자동화 시스템에서 생성된 네트워크 장비 종합 점검 보고서를 첨부합니다."
         from: "{{ mail_from }}"
         to: "{{ mail_to }}"
         attach:
-          - "{{ '/tmp/Periodic_Inspection_Report.pdf' if (pdf_result is succeeded) else '/tmp/inspection_report.html' }}"
+          - "{{ '/tmp/' + today_date + '-일일점검 결과.pdf' if (pdf_result is succeeded) else '/tmp/inspection_report.html' }}"
