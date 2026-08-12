@@ -83,19 +83,26 @@
     mail_to: "jhs@ecopro.co.kr"      # 받을 사람 이메일
 
   tasks:
+    # 한글 폰트 자동 다운로드 (PDF 글자 깨짐 방지)
+    - name: 나눔고딕 한글 폰트 다운로드
+      ansible.builtin.get_url:
+        url: "https://github.com/google/fonts/raw/main/ofl/nanumgothic/NanumGothic-Regular.ttf"
+        dest: "/tmp/NanumGothic.ttf"
+        mode: '0644'
+      ignore_errors: true
+
     - name: Jinja2 HTML 보고서 생성
       ansible.builtin.template:
         src: ../templates/inspection_report.j2
         dest: /tmp/inspection_report.html
 
-    # WeasyPrint 대신 Python xhtml2pdf 모듈을 임시 설치 및 활용하여 변환
     - name: xhtml2pdf 파이썬 패키지 확인 및 설치
       ansible.builtin.pip:
         name: xhtml2pdf
         state: present
       ignore_errors: true
 
-    - name: HTML을 PDF로 변환 (Python 라이브러리 활용)
+    - name: HTML을 PDF로 변환 (한글 폰트 적용)
       ansible.builtin.shell: |
         python3 -c "
         from xhtml2pdf import pisa
@@ -107,8 +114,7 @@
       register: pdf_result
       ignore_errors: true
 
-    # 만약 위 변환이 실패할 경우 HTML 파일 그대로 첨부 메일 발송
-    - name: PDF 첨부 메일 발송 (PDF 생성 실패 시 HTML 첨부)
+    - name: PDF 첨부 메일 발송
       community.general.mail:
         host: "{{ mail_host }}"
         port: "{{ mail_port }}"
