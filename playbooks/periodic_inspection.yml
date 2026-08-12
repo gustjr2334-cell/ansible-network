@@ -40,7 +40,6 @@
       ignore_errors: true
 
     # 3. 수집 데이터 파싱 (미수집 시 빈값 처리)
----
 - name: "[Step 1] 네트워크 장비 정밀 점검 및 데이터 수집"
   hosts: all
   gather_facts: false
