@@ -1,55 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <style>
-        @page { size: A4; margin: 15mm; }
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; margin: 0; padding: 0; }
-        .header { border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 20px; }
-        h1 { margin: 0; color: #0f172a; font-size: 20px; }
-        .date { font-size: 11px; color: #64748b; margin-top: 6px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; font-size: 11px; }
-        th { background-color: #f1f5f9; color: #334155; font-weight: bold; }
-        .badge-good { color: #15803d; font-weight: bold; }
-        .badge-warning { color: #b91c1c; font-weight: bold; background-color: #fef2f2; padding: 2px 6px; border-radius: 4px; }
-    </style>
+<meta charset="utf-8">
+<style>
+    @page { size: A4 portrait; margin: 15mm; }
+    body { font-family: 'NanumGothic', 'Malgun Gothic', sans-serif; font-size: 10pt; line-height: 1.4; color: #333; }
+    h1 { color: #1a365d; font-size: 18pt; border-bottom: 2px solid #2b6cb0; padding-bottom: 5px; margin-bottom: 15px; }
+    h2 { color: #2c5282; font-size: 13pt; margin-top: 20px; border-left: 4px solid #3182ce; padding-left: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 15px; }
+    th, td { border: 1px solid #cbd5e0; padding: 6px 8px; text-align: left; font-size: 8.5pt; }
+    th { background-color: #ebf8ff; color: #2c5282; font-weight: bold; }
+    .badge-ok { background-color: #c6f6d5; color: #22543d; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+    .badge-warn { background-color: #fed7d7; color: #9b2c2c; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+    pre { background: #f7fafc; border: 1px solid #e2e8f0; padding: 6px; font-size: 7.5pt; white-space: pre-wrap; word-wrap: break-word; font-family: monospace; }
+</style>
 </head>
 <body>
-    <div class="header">
-        <h1>인프라 장비 정기점검 종합 보고서</h1>
-        <div class="date">점검 생성 시각: {{ lookup('pipe', 'date "+%Y-%m-%d %H:%M:%S"') }}</div>
-    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>장비명</th>
-                <th>IP 주소</th>
-                <th>CPU 사용률</th>
-                <th>메모리 사용률</th>
-                <th>점검 결과</th>
-                <th>상세 내용</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in hostvars['localhost']['all_results'] %}
-            <tr>
-                <td>{{ item.name }}</td>
-                <td>{{ item.ip }}</td>
-                <td>{{ item.cpu_usage }}%</td>
-                <td>{{ item.mem_usage }}%</td>
-                <td>
-                    {% if item.status == '양호' %}
-                        <span class="badge-good">양호</span>
-                    {% else %}
-                        <span class="badge-warning">점검필요</span>
-                    {% endif %}
-                </td>
-                <td>{{ item.details }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<h1>네트워크 인프라 정기 점검 보고서</h1>
+<p><b>점검 일자:</b> {{ lookup('pipe', 'date +%Y-%m-%d %H:%M:%S') }}</p>
+
+<h2>1. 종합 점검 현황 요약</h2>
+<table>
+    <thead>
+        <tr>
+            <th>장비명</th>
+            <th>IP 주소</th>
+            <th>환경 상태(Power/Fan)</th>
+            <th>Err-Disable 포트</th>
+            <th>EtherChannel</th>
+            <th>HSRP/VRRP</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for dev in all_results %}
+        <tr>
+            <td><b>{{ dev.name }}</b></td>
+            <td>{{ dev.ip }}</td>
+            <td>
+                {% if dev.env_status == '정상' %}<span class="badge-ok">정상</span>
+                {% else %}<span class="badge-warn">{{ dev.env_status }}</span>{% endif %}
+            </td>
+            <td>
+                {% if dev.err_int_status == '정상' %}<span class="badge-ok">정상</span>
+                {% else %}<span class="badge-warn">{{ dev.err_int_status }}</span>{% endif %}
+            </td>
+            <td>
+                {% if dev.eth_status == '정상' %}<span class="badge-ok">정상</span>
+                {% else %}<span class="badge-warn">{{ dev.eth_status }}</span>{% endif %}
+            </td>
+            <td>
+                {% if dev.hsrp_status == '정상' %}<span class="badge-ok">정상</span>
+                {% else %}<span class="badge-warn">{{ dev.hsrp_status }}</span>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>2. 장비별 상세 주요 로그 및 모니터링 수치</h2>
+{% for dev in all_results %}
+    <h3>▶ {{ dev.name }} ({{ dev.ip }})</h3>
+    <p><b>[CPU Top Processes]</b></p>
+    <pre>{{ dev.raw_cpu }}</pre>
+    <p><b>[Memory Top Processes]</b></p>
+    <pre>{{ dev.raw_mem }}</pre>
+    {% if dev.raw_err_int | trim != '' %}
+        <p><b>[Err-Disabled Interfaces]</b></p>
+        <pre>{{ dev.raw_err_int }}</pre>
+    {% endif %}
+    <hr style="border: 0.5px dashed #e2e8f0; margin-top: 15px;">
+{% endfor %}
+
 </body>
 </html>
