@@ -118,16 +118,12 @@
   hosts: localhost
   gather_facts: false
   vars:
-    mail_host: "email.ecopro.co.kr"     # 사내 SMTP 서버 IP 또는 주소
-    mail_port: 25                       # SMTP 포트
-    mail_from: "jhs@ecopro.co.kr"       # 보낼 사람 이메일
-    mail_to:                            # 지정 수신자 5인
+    mail_host: "smtp.company.com"         # 사내 SMTP 서버 주소
+    mail_port: 25                         # SMTP 포트
+    mail_from: "awx-report@company.com"   # 발신자 주소
+    mail_to:                            # 지정 수신자
       - "jhs@ecopro.co.kr"
-      - "charlesj@ecopro.co.kr"
-      - "smpark2@ecopro.co.kr"
-      - "jukim2@ecopro.co.kr"
       - "tgkim11@ecopropn.com"
-      - "shmin3@ecopropn.com"
 
   tasks:
     - name: KST 날짜 및 시간 정보 추출
@@ -181,7 +177,7 @@
         with open('/tmp/inspection_report.html', 'r', encoding='utf-8') as html_file:
             html_content = html_file.read()
 
-        output_pdf_path = '/tmp/{{ today_date }}-일일점검 결과.pdf'
+        output_pdf_path = '/tmp/[포항캠퍼스] {{ today_date }} 일일점검.pdf'
         with open(output_pdf_path, 'wb') as pdf_file:
             pisa.CreatePDF(html_content, dest=pdf_file)
         "
@@ -192,9 +188,9 @@
       community.general.mail:
         host: "{{ mail_host }}"
         port: "{{ mail_port }}"
-        subject: "[정기점검] {{ today_date }} 인프라 네트워크 장비 정밀 점검 보고서"
-        body: "안녕하세요. AWX 자동화 시스템에서 생성된 네트워크 장비 종합 점검 보고서를 첨부합니다."
+        subject: "[정기점검] {{ today_date }} 포항캠퍼스 Infra 일일 점검 보고서"
+        body: "안녕하세요. AWX 자동화 시스템에서 생성된 포항캠퍼스 인프라 네트워크 장비 일일 점검 보고서를 첨부합니다."
         from: "{{ mail_from }}"
         to: "{{ mail_to }}"
         attach:
-          - "{{ '/tmp/' + today_date + '-일일점검 결과.pdf' if (pdf_result is succeeded) else '/tmp/inspection_report.html' }}"
+          - "{{ '/tmp/[포항캠퍼스] ' + today_date + ' 일일점검.pdf' if (pdf_result is succeeded) else '/tmp/inspection_report.html' }}"
