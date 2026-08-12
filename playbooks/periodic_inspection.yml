@@ -31,6 +31,9 @@
           - show logging
       register: check_common
       ignore_errors: true
+      until: check_common is not failed
+      retries: 3
+      delay: 5
 
     # 2. VRRP 및 L2 이중화 명령어 실행
     - name: VRRP 및 이중화 명령어 실행
