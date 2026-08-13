@@ -125,7 +125,6 @@
       - "jhs@ecopro.co.kr"
       - "tgkim11@ecopropn.com"
       - "jukim2@ecopro.co.kr"
-      - "jhheo@ecopro.co.kr"
 
   tasks:
     - name: KST 날짜 및 시간 정보 추출
