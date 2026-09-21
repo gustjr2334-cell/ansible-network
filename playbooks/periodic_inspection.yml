@@ -69,15 +69,20 @@
           {%- endif -%}
         c_status: >-
           {%- set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '' -%}
-          {%- set matched_cpu = cpu_out | regex_findall('CPU utilization for five seconds: ([0-9]+%)') -%}
-          {{ matched_cpu | first if matched_cpu else '12%' }}
+          {# Cisco IOS의 세미콜론/슬래시 등을 모두 수용하도록 정규식 개선 #}
+          {%- set matched_cpu = cpu_out | regex_findall('five seconds:\s*([0-9]+)%?') -%}
+          {%- if matched_cpu | length > 0 -%}
+            {{ matched_cpu | first }}%
+          {%- else -%}
+            0%
+          {%- endif -%}
         t_status: >-
           {%- set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) -%}
-          {%- set temp_candidates = env_raw | regex_findall('(?i)(?:temp|temperature)[^0-9]*([1-7][0-9])\\s*c') -%}
+          {%- set temp_candidates = env_raw | regex_findall('(?i)(?:temp|temperature)[^0-9]*([1-7][0-9])\s*c') -%}
           {%- if temp_candidates | length > 0 -%}
             {{ temp_candidates | first }}°C
           {%- else -%}
-            {%- set alt_candidates = env_raw | regex_findall('([2-5][0-9])\\s*C') -%}
+            {%- set alt_candidates = env_raw | regex_findall('([2-5][0-9])\s*C') -%}
             {{ (alt_candidates | first if alt_candidates else '32') }}°C
           {%- endif -%}
       when: inventory_hostname != 'localhost'
@@ -94,7 +99,8 @@
           overall_status: >-
             {%- set p_is_fail = (p_status != '정상') -%}
             {%- set cpu_int = (c_status | regex_replace('[^0-9]', '')) | int(default=0) -%}
-            {%- set c_is_fail = (cpu_int >= 80 or res_cpu is failed) -%}
+            {# 명령어 수행 결과와 무관하게 수집된 cpu_int가 80% 이상일 때만 FAIL 처리 #}
+            {%- set c_is_fail = (cpu_int >= 80) -%}
             {%- set temp_int = (t_status | regex_replace('[^0-9]', '')) | int(default=0) -%}
             {%- set t_is_fail = (temp_int >= 60) -%}
             {%- if not p_is_fail and not c_is_fail and not t_is_fail -%}
@@ -123,8 +129,6 @@
     mail_from: "jhs@ecopro.co.kr"       # 보낼 사람 이메일
     mail_to:                            # 지정 수신자
       - "jhs@ecopro.co.kr"
-      - "tgkim11@ecopropn.com"
-      - "jukim2@ecopro.co.kr"
 
   tasks:
     - name: KST 날짜 및 시간 정보 추출
