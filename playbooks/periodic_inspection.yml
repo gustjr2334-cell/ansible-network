@@ -69,12 +69,14 @@
           {%- endif -%}
         c_status: >-
           {%- set cpu_out = res_cpu.stdout[0] if (res_cpu is succeeded and res_cpu.stdout is defined and res_cpu.stdout | length > 0) else '' -%}
-          {# Cisco IOS의 세미콜론/슬래시 등을 모두 수용하도록 정규식 개선 #}
-          {%- set matched_cpu = cpu_out | regex_findall('five seconds:\s*([0-9]+)%?') -%}
+          {# 1순위: 'five seconds' 또는 '5 seconds' 뒤의 숫자 추출 #}
+          {%- set matched_cpu = cpu_out | regex_findall('(?i)(?:five|5)\s*seconds[^\n0-9]*([0-9]+)%?') -%}
           {%- if matched_cpu | length > 0 -%}
             {{ matched_cpu | first }}%
           {%- else -%}
-            0%
+            {# 2순위 (Fallback): 출력물 전체에서 처음으로 등장하는 % 숫자 수집 #}
+            {%- set any_cpu = cpu_out | regex_findall('([0-9]+)%') -%}
+            {{ any_cpu | first + '%' if any_cpu | length > 0 else 'N/A' }}
           {%- endif -%}
         t_status: >-
           {%- set env_raw = (res_env.stdout[0] if (res_env is succeeded and res_env.stdout is defined and res_env.stdout | length > 0) else (res_env_fallback.stdout[0] if (res_env_fallback is succeeded and res_env_fallback.stdout is defined and res_env_fallback.stdout | length > 0) else '')) -%}
